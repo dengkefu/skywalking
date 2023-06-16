@@ -19,18 +19,13 @@
 package org.apache.skywalking.oap.server.configuration.consul;
 
 import org.apache.skywalking.oap.server.library.module.ModuleStartException;
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.junit.Test;
 
 public class ConsulConfigurationProviderTest {
 
-    @Test
-    public void shouldThrowWhenSettingsInvalid() {
-        assertThrows(ModuleStartException.class, () -> {
-            ConsulConfigurationProvider provider = new ConsulConfigurationProvider();
-            provider.newConfigCreator().onInitialized(new ConsulConfigurationCenterSettings());
-            provider.initConfigReader();
-        });
+    @Test(expected = ModuleStartException.class)
+    public void shouldThrowWhenSettingsInvalid() throws ModuleStartException {
+        ConsulConfigurationProvider provider = new ConsulConfigurationProvider();
+        provider.initConfigReader();
     }
 }

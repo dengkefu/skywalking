@@ -21,19 +21,19 @@ package org.apache.skywalking.oap.server.tool.profile.exporter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.skywalking.apm.network.language.profile.v3.ThreadSnapshot;
 import org.apache.skywalking.oap.server.core.CoreModuleConfig;
-import org.apache.skywalking.oap.server.core.profiling.trace.analyze.ProfileAnalyzer;
-import org.apache.skywalking.oap.server.core.query.input.SegmentProfileAnalyzeQuery;
+import org.apache.skywalking.oap.server.core.profile.analyze.ProfileAnalyzer;
 import org.apache.skywalking.oap.server.core.query.type.ProfileAnalyzation;
 import org.apache.skywalking.oap.server.core.query.type.ProfileAnalyzeTimeRange;
 import org.apache.skywalking.oap.server.core.query.type.ProfileStackElement;
 import org.apache.skywalking.oap.server.core.query.type.ProfileStackTree;
 import org.apache.skywalking.oap.server.core.query.type.Span;
-import org.apache.skywalking.oap.server.core.storage.profiling.trace.IProfileThreadSnapshotQueryDAO;
+import org.apache.skywalking.oap.server.core.storage.profile.IProfileThreadSnapshotQueryDAO;
 import org.apache.skywalking.oap.server.library.util.CollectionUtils;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -59,13 +59,13 @@ public class ProfileExportedAnalyze {
         final Span span = sameNameSpans.get(0);
 
         // build time ranges
-        final List<SegmentProfileAnalyzeQuery> queries = buildAnalyzeQueries(basicInfo, span, includeChildren);
-        final List<ThreadSnapshot> snapshots = ProfileSnapshotDumper.parseFromFileWithTimeRange(snapshotFile, queries);
+        final List<ProfileAnalyzeTimeRange> timeRanges = buildTimeRanges(basicInfo, span, includeChildren);
+        final List<ThreadSnapshot> snapshots = ProfileSnapshotDumper.parseFromFileWithTimeRange(snapshotFile, timeRanges);
         log.info("Total found snapshot count: {}", snapshots.size());
 
         // analyze and print
         final ProfileAnalyzer profileAnalyzer = new Analyzer(snapshots);
-        final ProfileAnalyzation analyzation = profileAnalyzer.analyze(queries);
+        final ProfileAnalyzation analyzation = profileAnalyzer.analyze(null, timeRanges);
         printAnalyzation(analyzation);
 
     }
@@ -100,12 +100,12 @@ public class ProfileExportedAnalyze {
         }
     }
 
-    private static final List<SegmentProfileAnalyzeQuery> buildAnalyzeQueries(ProfiledBasicInfo basicInfo, Span currentSpan, boolean includeChildren) {
+    private static List<ProfileAnalyzeTimeRange> buildTimeRanges(ProfiledBasicInfo basicInfo, Span currentSpan, boolean includeChildren) {
         if (includeChildren) {
             final ProfileAnalyzeTimeRange range = new ProfileAnalyzeTimeRange();
             range.setStart(currentSpan.getStartTime());
             range.setEnd(currentSpan.getEndTime());
-            return List.of(SegmentProfileAnalyzeQuery.builder().timeRange(range).build());
+            return Collections.singletonList(range);
         }
 
         // find children spans
@@ -137,7 +137,7 @@ public class ProfileExportedAnalyze {
             ranges.add(range);
         }
 
-        return ranges.stream().map(r -> SegmentProfileAnalyzeQuery.builder().timeRange(r).build()).collect(Collectors.toList());
+        return ranges;
     }
 
     private static class Analyzer extends ProfileAnalyzer {

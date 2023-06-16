@@ -1,9 +1,10 @@
-protected org.apache.skywalking.oap.server.core.storage.StorageID id0() {
-org.apache.skywalking.oap.server.core.storage.StorageID id = new org.apache.skywalking.oap.server.core.storage.StorageID().append(TIME_BUCKET, getTimeBucket());
+protected String id0() {
+StringBuilder splitJointId = new StringBuilder(String.valueOf(getTimeBucket()));
 <#list fieldsFromSource as sourceField>
     <#if sourceField.isID()>
-        id.append("${sourceField.columnName}", ${sourceField.fieldName});
+        splitJointId.append(org.apache.skywalking.oap.server.core.Const.ID_CONNECTOR)
+                    .append(${sourceField.fieldName});
     </#if>
 </#list>
-return id;
+return splitJointId.toString();
 }

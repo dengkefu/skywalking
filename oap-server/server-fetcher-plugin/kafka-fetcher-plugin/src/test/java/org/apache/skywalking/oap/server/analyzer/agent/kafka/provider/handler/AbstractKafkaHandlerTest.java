@@ -23,9 +23,9 @@ import org.apache.kafka.common.utils.Bytes;
 import org.apache.skywalking.oap.server.analyzer.agent.kafka.mock.MockModuleManager;
 import org.apache.skywalking.oap.server.analyzer.agent.kafka.module.KafkaFetcherConfig;
 import org.apache.skywalking.oap.server.library.module.ModuleManager;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 public class AbstractKafkaHandlerTest {
     @Test

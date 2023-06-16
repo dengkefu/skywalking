@@ -17,20 +17,19 @@
 
 package org.apache.skywalking.oap.server.recevier.log.provider;
 
-import com.linecorp.armeria.common.HttpMethod;
-import java.util.Collections;
 import org.apache.skywalking.oap.log.analyzer.module.LogAnalyzerModule;
 import org.apache.skywalking.oap.server.core.CoreModule;
 import org.apache.skywalking.oap.server.core.server.GRPCHandlerRegister;
-import org.apache.skywalking.oap.server.core.server.HTTPHandlerRegister;
+import org.apache.skywalking.oap.server.core.server.JettyHandlerRegister;
+import org.apache.skywalking.oap.server.library.module.ModuleConfig;
 import org.apache.skywalking.oap.server.library.module.ModuleDefine;
 import org.apache.skywalking.oap.server.library.module.ModuleProvider;
 import org.apache.skywalking.oap.server.library.module.ModuleStartException;
 import org.apache.skywalking.oap.server.library.module.ServiceNotProvidedException;
 import org.apache.skywalking.oap.server.receiver.sharing.server.SharingServerModule;
 import org.apache.skywalking.oap.server.recevier.log.module.LogModule;
-import org.apache.skywalking.oap.server.recevier.log.provider.handler.grpc.LogReportServiceGrpcHandler;
-import org.apache.skywalking.oap.server.recevier.log.provider.handler.rest.LogReportServiceHTTPHandler;
+import org.apache.skywalking.oap.server.recevier.log.provider.handler.grpc.LogReportServiceHandler;
+import org.apache.skywalking.oap.server.recevier.log.provider.handler.rest.LogReportServiceRestHandler;
 import org.apache.skywalking.oap.server.telemetry.TelemetryModule;
 
 public class LogModuleProvider extends ModuleProvider {
@@ -46,7 +45,7 @@ public class LogModuleProvider extends ModuleProvider {
     }
 
     @Override
-    public ConfigCreator newConfigCreator() {
+    public ModuleConfig createConfigBeanIfAbsent() {
         return null;
     }
 
@@ -61,14 +60,12 @@ public class LogModuleProvider extends ModuleProvider {
                                                               .provider()
                                                               .getService(GRPCHandlerRegister.class);
 
-        grpcHandlerRegister.addHandler(new LogReportServiceGrpcHandler(getManager()));
+        grpcHandlerRegister.addHandler(new LogReportServiceHandler(getManager()));
 
-        HTTPHandlerRegister httpHandlerRegister = getManager().find(SharingServerModule.NAME)
-                                                              .provider()
-                                                              .getService(HTTPHandlerRegister.class);
-        httpHandlerRegister.addHandler(new LogReportServiceHTTPHandler(getManager()),
-                                       Collections.singletonList(HttpMethod.POST)
-        );
+        JettyHandlerRegister jettyHandlerRegister = getManager().find(SharingServerModule.NAME)
+                                                                .provider()
+                                                                .getService(JettyHandlerRegister.class);
+        jettyHandlerRegister.addHandler(new LogReportServiceRestHandler(getManager()));
     }
 
     @Override

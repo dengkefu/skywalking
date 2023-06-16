@@ -19,9 +19,8 @@
 package org.apache.skywalking.oap.server.testing.module;
 
 import org.apache.skywalking.oap.server.library.module.Service;
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class ModuleManagerTestCase {
 
@@ -34,13 +33,13 @@ public class ModuleManagerTestCase {
         ModuleDefineTesting moduleDefine = new ModuleDefineTesting();
         moduleManager.put(moduleName, moduleDefine);
 
-        assertEquals(moduleDefine, moduleManager.find(moduleName));
+        Assert.assertEquals(moduleDefine, moduleManager.find(moduleName));
 
         TestServiceImpl testService = new TestServiceImpl();
         moduleDefine.provider().registerServiceImplementation(TestService.class, testService);
 
         TestService service = moduleManager.find(moduleName).provider().getService(TestService.class);
-        assertEquals(testService, service);
+        Assert.assertEquals(testService, service);
     }
 
     interface TestService extends Service {

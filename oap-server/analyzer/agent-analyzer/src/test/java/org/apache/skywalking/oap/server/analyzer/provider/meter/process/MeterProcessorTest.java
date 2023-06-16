@@ -38,14 +38,14 @@ import org.apache.skywalking.oap.server.library.module.ModuleManager;
 import org.apache.skywalking.oap.server.library.module.ModuleProviderHolder;
 import org.apache.skywalking.oap.server.library.module.ModuleServiceHolder;
 import org.apache.skywalking.oap.server.library.module.ModuleStartException;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.powermock.reflect.Whitebox;
 
 import java.util.Arrays;
@@ -60,7 +60,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(MockitoExtension.class)
+@RunWith(MockitoJUnitRunner.class)
 public class MeterProcessorTest {
 
     @Mock
@@ -71,13 +71,13 @@ public class MeterProcessorTest {
     private String service = "test-service";
     private String serviceInstance = "test-service-instance";
 
-    @BeforeAll
+    @BeforeClass
     public static void init() {
         MeterEntity.setNamingControl(
                 new NamingControl(512, 512, 512, new EndpointNameGrouping()));
     }
 
-    @BeforeEach
+    @Before
     public void setup() throws StorageException, ModuleStartException {
         meterSystem = spy(new MeterSystem(moduleManager));
         when(moduleManager.find(anyString())).thenReturn(mock(ModuleProviderHolder.class));
@@ -94,7 +94,7 @@ public class MeterProcessorTest {
     }
 
     @Test
-    public void testProcess() {
+    public void testProcess() throws ModuleStartException {
         AtomicReference<AvgHistogramFunction> data = new AtomicReference<>();
         doAnswer(invocationOnMock -> {
             if (AvgHistogramFunction.class.isAssignableFrom(invocationOnMock.getArgument(0).getClass())) {
@@ -121,12 +121,12 @@ public class MeterProcessorTest {
         summation.put(Bucket.INFINITE_NEGATIVE, 10L);
         summation.put("0", 20L);
         summation.put("10", 10L);
-        Assertions.assertEquals(summation, func.getSummation());
+        Assert.assertEquals(summation, func.getSummation());
         final DataTable count = new DataTable();
         count.put(Bucket.INFINITE_NEGATIVE, 1L);
         count.put("0", 1L);
         count.put("10", 1L);
-        Assertions.assertEquals(count, func.getCount());
+        Assert.assertEquals(count, func.getCount());
     }
 
 }

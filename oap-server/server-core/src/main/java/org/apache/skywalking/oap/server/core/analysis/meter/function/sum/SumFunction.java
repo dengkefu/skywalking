@@ -18,12 +18,15 @@
 
 package org.apache.skywalking.oap.server.core.analysis.meter.function.sum;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.apache.skywalking.oap.server.core.Const;
 import org.apache.skywalking.oap.server.core.UnexpectedException;
 import org.apache.skywalking.oap.server.core.analysis.manual.instance.InstanceTraffic;
-import org.apache.skywalking.oap.server.core.analysis.meter.Meter;
 import org.apache.skywalking.oap.server.core.analysis.meter.MeterEntity;
 import org.apache.skywalking.oap.server.core.analysis.meter.function.AcceptableValue;
 import org.apache.skywalking.oap.server.core.analysis.meter.function.MeterFunction;
@@ -33,35 +36,27 @@ import org.apache.skywalking.oap.server.core.analysis.metrics.annotation.Entranc
 import org.apache.skywalking.oap.server.core.analysis.metrics.annotation.SourceFrom;
 import org.apache.skywalking.oap.server.core.query.sql.Function;
 import org.apache.skywalking.oap.server.core.remote.grpc.proto.RemoteData;
-import org.apache.skywalking.oap.server.core.storage.StorageID;
-import org.apache.skywalking.oap.server.core.storage.annotation.BanyanDB;
+import org.apache.skywalking.oap.server.core.storage.StorageHashMapBuilder;
 import org.apache.skywalking.oap.server.core.storage.annotation.Column;
-import org.apache.skywalking.oap.server.core.storage.type.Convert2Entity;
-import org.apache.skywalking.oap.server.core.storage.type.Convert2Storage;
-import org.apache.skywalking.oap.server.core.storage.type.StorageBuilder;
-
-import java.util.Objects;
 
 @ToString
 @MeterFunction(functionName = "sum")
-public abstract class SumFunction extends Meter implements AcceptableValue<Long>, LongValueHolder {
+public abstract class SumFunction extends Metrics implements AcceptableValue<Long>, LongValueHolder {
     protected static final String VALUE = "value";
 
     @Setter
     @Getter
-    @Column(name = ENTITY_ID, length = 512)
-    @BanyanDB.SeriesID(index = 0)
+    @Column(columnName = ENTITY_ID, length = 512)
     private String entityId;
 
     @Setter
     @Getter
-    @Column(name = InstanceTraffic.SERVICE_ID)
+    @Column(columnName = InstanceTraffic.SERVICE_ID)
     private String serviceId;
 
     @Getter
     @Setter
-    @Column(name = VALUE, dataType = Column.ValueDataType.COMMON_VALUE, function = Function.Sum)
-    @BanyanDB.MeasureField
+    @Column(columnName = VALUE, dataType = Column.ValueDataType.COMMON_VALUE, function = Function.Sum)
     private long value;
 
     @Entrance
@@ -128,10 +123,8 @@ public abstract class SumFunction extends Meter implements AcceptableValue<Long>
     }
 
     @Override
-    protected StorageID id0() {
-        return new StorageID()
-            .append(TIME_BUCKET, getTimeBucket())
-            .append(ENTITY_ID, getEntityId());
+    protected String id0() {
+        return getTimeBucket() + Const.ID_CONNECTOR + getEntityId();
     }
 
     @Override
@@ -142,32 +135,34 @@ public abstract class SumFunction extends Meter implements AcceptableValue<Long>
     }
 
     @Override
-    public Class<? extends StorageBuilder<?>> builder() {
+    public Class<? extends StorageHashMapBuilder<?>> builder() {
         return SumStorageBuilder.class;
     }
 
-    public static class SumStorageBuilder implements StorageBuilder<SumFunction> {
+    public static class SumStorageBuilder implements StorageHashMapBuilder<SumFunction> {
         @Override
-        public SumFunction storage2Entity(final Convert2Entity converter) {
+        public SumFunction storage2Entity(final Map<String, Object> dbMap) {
             final SumFunction metrics = new SumFunction() {
                 @Override
                 public AcceptableValue<Long> createNew() {
                     throw new UnexpectedException("createNew should not be called");
                 }
             };
-            metrics.setValue(((Number) converter.get(VALUE)).longValue());
-            metrics.setTimeBucket(((Number) converter.get(TIME_BUCKET)).longValue());
-            metrics.setServiceId((String) converter.get(InstanceTraffic.SERVICE_ID));
-            metrics.setEntityId((String) converter.get(ENTITY_ID));
+            metrics.setValue(((Number) dbMap.get(VALUE)).longValue());
+            metrics.setTimeBucket(((Number) dbMap.get(TIME_BUCKET)).longValue());
+            metrics.setServiceId((String) dbMap.get(InstanceTraffic.SERVICE_ID));
+            metrics.setEntityId((String) dbMap.get(ENTITY_ID));
             return metrics;
         }
 
         @Override
-        public void entity2Storage(final SumFunction storageData, final Convert2Storage converter) {
-            converter.accept(VALUE, storageData.getValue());
-            converter.accept(TIME_BUCKET, storageData.getTimeBucket());
-            converter.accept(InstanceTraffic.SERVICE_ID, storageData.getServiceId());
-            converter.accept(ENTITY_ID, storageData.getEntityId());
+        public Map<String, Object> entity2Storage(final SumFunction storageData) {
+            final Map<String, Object> map = new HashMap<>();
+            map.put(VALUE, storageData.getValue());
+            map.put(TIME_BUCKET, storageData.getTimeBucket());
+            map.put(InstanceTraffic.SERVICE_ID, storageData.getServiceId());
+            map.put(ENTITY_ID, storageData.getEntityId());
+            return map;
         }
     }
 
@@ -187,5 +182,15 @@ public abstract class SumFunction extends Meter implements AcceptableValue<Long>
     @Override
     public int hashCode() {
         return Objects.hash(getEntityId(), getTimeBucket());
+    }
+
+    @Override
+    public boolean haveDefault() {
+        return true;
+    }
+
+    @Override
+    public boolean isDefaultValue() {
+        return value == 0;
     }
 }

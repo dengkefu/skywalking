@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.skywalking.oap.server.core.config.SearchableTracesTagsWatcher;
 import org.apache.skywalking.oap.server.core.source.ScopeDefaultColumn;
 import org.apache.skywalking.oap.server.library.module.ModuleConfig;
 
@@ -33,8 +32,10 @@ public class CoreModuleConfig extends ModuleConfig {
     private String restHost;
     private int restPort;
     private String restContextPath;
+    private int restMinThreads = 1;
     private int restMaxThreads = 200;
     private long restIdleTimeOut = 30000;
+    private int restAcceptorPriorityDelta = 0;
     private int restAcceptQueueSize = 0;
 
     private String gRPCHost;
@@ -51,6 +52,10 @@ public class CoreModuleConfig extends ModuleConfig {
      */
     private long l1FlushPeriod = 500;
     /**
+     * Enable database flush session.
+     */
+    private boolean enableDatabaseSession;
+    /**
      * The threshold of session time. Unit is ms. Default value is 70s.
      */
     private long storageSessionTimeout = 70_000;
@@ -59,7 +64,7 @@ public class CoreModuleConfig extends ModuleConfig {
      * The period of doing data persistence. Unit is second.
      */
     @Setter
-    private int persistentPeriod = 25;
+    private long persistentPeriod = 25;
 
     private boolean enableDataKeeperExecutor = true;
 
@@ -100,20 +105,12 @@ public class CoreModuleConfig extends ModuleConfig {
      */
     private int maxSizeOfAnalyzeProfileSnapshot = 12000;
     /**
-     * Query the eBPF Profiling data max duration(second) from database.
-     */
-    private int maxDurationOfQueryEBPFProfilingData = 30;
-    /**
-     * Thread Count of query the eBPF Profiling data.
-     */
-    private int maxThreadCountOfQueryEBPFProfilingData = Runtime.getRuntime().availableProcessors();
-    /**
      * Extra model column are the column defined by {@link ScopeDefaultColumn.DefinedByField#requireDynamicActive()} ==
      * true. These columns of model are not required logically in aggregation or further query, and it will cause more
      * load for memory, network of OAP and storage.
      *
      * But, being activated, user could see the name in the storage entities, which make users easier to use 3rd party
-     * tool, such as Kibana-&gt;ES, to query the data by themselves.
+     * tool, such as Kibana->ES, to query the data by themselves.
      */
     private boolean activeExtraModelColumns = false;
     /**
@@ -139,10 +136,6 @@ public class CoreModuleConfig extends ModuleConfig {
     @Setter
     @Getter
     private String searchableTracesTags = DEFAULT_SEARCHABLE_TAG_KEYS;
-    @Setter
-    @Getter
-    private SearchableTracesTagsWatcher searchableTracesTagsWatcher;
-
     /**
      * Define the set of logs tag keys, which should be searchable through the GraphQL.
      *
@@ -159,22 +152,7 @@ public class CoreModuleConfig extends ModuleConfig {
     @Setter
     @Getter
     private String searchableAlarmTags = "";
-    /**
-     * The max size of tags keys for autocomplete select.
-     *
-     * @since 9.1.0
-     */
-    @Setter
-    @Getter
-    private int autocompleteTagKeysQueryMaxSize = 100;
-    /**
-     * The max size of tags values for autocomplete select.
-     *
-     * @since 9.1.0
-     */
-    @Setter
-    @Getter
-    private int autocompleteTagValuesQueryMaxSize = 100;
+
     /**
      * The number of threads used to prepare metrics data to the storage.
      *
@@ -193,11 +171,6 @@ public class CoreModuleConfig extends ModuleConfig {
      * Use -1 to disable it.
      */
     private int httpMaxRequestHeaderSize = 8192;
-
-    /**
-     * The max number of HTTP URIs per service for further URI pattern recognition.
-     */
-    private int maxHttpUrisNumberPerService = 3000;
 
     public CoreModuleConfig() {
         this.downsampling = new ArrayList<>();

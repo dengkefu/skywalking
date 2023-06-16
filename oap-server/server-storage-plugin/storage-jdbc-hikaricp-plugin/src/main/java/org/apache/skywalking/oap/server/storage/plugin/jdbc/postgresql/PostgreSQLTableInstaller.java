@@ -19,36 +19,27 @@
 package org.apache.skywalking.oap.server.storage.plugin.jdbc.postgresql;
 
 import com.google.gson.JsonObject;
-import org.apache.skywalking.oap.server.core.analysis.Layer;
+import org.apache.skywalking.oap.server.core.analysis.NodeType;
 import org.apache.skywalking.oap.server.core.storage.model.ModelColumn;
 import org.apache.skywalking.oap.server.core.storage.type.StorageDataComplexObject;
 import org.apache.skywalking.oap.server.library.client.Client;
 import org.apache.skywalking.oap.server.library.module.ModuleManager;
-import org.apache.skywalking.oap.server.storage.plugin.jdbc.common.JDBCTableInstaller;
-
+import org.apache.skywalking.oap.server.storage.plugin.jdbc.mysql.MySQLTableInstaller;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.List;
 
-public class PostgreSQLTableInstaller extends JDBCTableInstaller {
-    public PostgreSQLTableInstaller(Client client, ModuleManager moduleManager) {
-        super(client, moduleManager);
+public class PostgreSQLTableInstaller extends MySQLTableInstaller {
+
+    public PostgreSQLTableInstaller(Client client, ModuleManager moduleManager, int maxSizeOfArrayColumn,
+                                    int numOfSearchableValuesPerTag) {
+        super(client, moduleManager, maxSizeOfArrayColumn, numOfSearchableValuesPerTag);
     }
 
     @Override
-    public void start() {
-        /*
-         * Override column because the default column names in core are reserved in PostgreSQL.
-         */
-        overrideColumnName("value", "value_");
-        overrideColumnName("precision", "cal_precision");
-        overrideColumnName("match", "match_num");
-    }
-
-    @Override
-    protected String getColumnDefinition(ModelColumn column, Class<?> type, Type genericType) {
+    protected String transform(ModelColumn column, Class<?> type, Type genericType) {
         final String storageName = column.getColumnName().getStorageName();
-        if (Integer.class.equals(type) || int.class.equals(type) || Layer.class.equals(type)) {
+        if (Integer.class.equals(type) || int.class.equals(type) || NodeType.class.equals(type)) {
             return storageName + " INT";
         } else if (Long.class.equals(type) || long.class.equals(type)) {
             return storageName + " BIGINT";
@@ -68,14 +59,22 @@ public class PostgreSQLTableInstaller extends JDBCTableInstaller {
             }
         } else if (List.class.isAssignableFrom(type)) {
             final Type elementType = ((ParameterizedType) genericType).getActualTypeArguments()[0];
-            return getColumnDefinition(column, (Class<?>) elementType, elementType);
+            String oneColumnType = transform(column, (Class<?>) elementType, elementType);
+            // Remove the storageName as prefix
+            oneColumnType = oneColumnType.substring(storageName.length());
+            StringBuilder columns = new StringBuilder();
+            for (int i = 0; i < maxSizeOfArrayColumn; i++) {
+                columns.append(storageName).append("_").append(i).append(oneColumnType)
+                       .append(i == maxSizeOfArrayColumn - 1 ? "" : ",");
+            }
+            return columns.toString();
         } else {
             throw new IllegalArgumentException("Unsupported data type: " + type.getName());
         }
     }
 
     @Override
-    public String getColumnDefinition(final ModelColumn column) {
+    protected String getColumn(final ModelColumn column) {
         final String storageName = column.getColumnName().getStorageName();
         final Class<?> type = column.getType();
         if (StorageDataComplexObject.class.isAssignableFrom(type)) {
@@ -93,6 +92,6 @@ public class PostgreSQLTableInstaller extends JDBCTableInstaller {
                 return storageName + " VARCHAR(" + column.getLength() + ")";
             }
         }
-        return super.getColumnDefinition(column);
+        return super.getColumn(column);
     }
 }

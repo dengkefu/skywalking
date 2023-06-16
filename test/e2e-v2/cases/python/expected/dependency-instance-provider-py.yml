@@ -25,7 +25,7 @@ nodes:
   name: provider-py-instance
   serviceid: {{ b64enc "provider-py" }}.1
   servicename: provider-py
-  type: ""
+  type: Python
   isreal: true
 {{- end }}
 calls:

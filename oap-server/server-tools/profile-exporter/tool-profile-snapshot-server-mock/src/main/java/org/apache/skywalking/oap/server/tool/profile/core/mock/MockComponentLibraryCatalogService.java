@@ -43,9 +43,4 @@ public class MockComponentLibraryCatalogService implements IComponentLibraryCata
     public String getServerNameBasedOnComponent(int componentId) {
         return null;
     }
-
-    @Override
-    public boolean compare(final int componentA, final int componentB) {
-        return false;
-    }
 }

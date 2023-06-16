@@ -24,7 +24,6 @@ telemetry:
   cluster: cluster1
   service: service1
   instance: instance1
-  export_type: none
 
 sharing:
   common_config:
@@ -42,7 +41,7 @@ pipes:
     gatherer:
       server_name: "grpc-server"
       receiver:
-        plugin_name: "grpc-native-log-receiver"
+        plugin_name: "grpc-nativelog-receiver"
       queue:
         plugin_name: "mmap-queue"
         segment_size: 524288
@@ -58,5 +57,5 @@ pipes:
       min_flush_events: 5
       client_name: kafka-client
       forwarders:
-        - plugin_name: native-log-kafka-forwarder
+        - plugin_name: nativelog-kafka-forwarder
           topic: skywalking-logs

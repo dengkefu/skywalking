@@ -33,7 +33,7 @@ public enum K8sRetagType implements Retag {
                                 final String newLabelName,
                                 final String existingLabelName,
                                 final String namespaceLabelName) {
-            return Arrays.stream(ss).map(sample -> {
+            Sample[] samples = Arrays.stream(ss).map(sample -> {
                 String podName = sample.getLabels().get(existingLabelName);
                 String namespace = sample.getLabels().get(namespaceLabelName);
                 if (!Strings.isNullOrEmpty(podName) && !Strings.isNullOrEmpty(namespace)) {
@@ -47,6 +47,7 @@ public enum K8sRetagType implements Retag {
                 }
                 return sample;
             }).toArray(Sample[]::new);
+            return samples;
         }
     }
 }

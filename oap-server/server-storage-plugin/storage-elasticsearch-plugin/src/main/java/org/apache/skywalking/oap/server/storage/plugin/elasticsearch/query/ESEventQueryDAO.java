@@ -18,6 +18,10 @@
 
 package org.apache.skywalking.oap.server.storage.plugin.elasticsearch.query;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import org.apache.skywalking.library.elasticsearch.requests.search.BoolQueryBuilder;
 import org.apache.skywalking.library.elasticsearch.requests.search.Query;
 import org.apache.skywalking.library.elasticsearch.requests.search.Search;
@@ -25,8 +29,6 @@ import org.apache.skywalking.library.elasticsearch.requests.search.SearchBuilder
 import org.apache.skywalking.library.elasticsearch.requests.search.Sort;
 import org.apache.skywalking.library.elasticsearch.response.search.SearchHit;
 import org.apache.skywalking.library.elasticsearch.response.search.SearchResponse;
-import org.apache.skywalking.oap.server.core.analysis.Layer;
-import org.apache.skywalking.oap.server.core.analysis.metrics.Event;
 import org.apache.skywalking.oap.server.core.query.PaginationUtils;
 import org.apache.skywalking.oap.server.core.query.enumeration.Order;
 import org.apache.skywalking.oap.server.core.query.input.Duration;
@@ -34,16 +36,12 @@ import org.apache.skywalking.oap.server.core.query.type.event.EventQueryConditio
 import org.apache.skywalking.oap.server.core.query.type.event.EventType;
 import org.apache.skywalking.oap.server.core.query.type.event.Events;
 import org.apache.skywalking.oap.server.core.query.type.event.Source;
+import org.apache.skywalking.oap.server.core.source.Event;
 import org.apache.skywalking.oap.server.core.storage.query.IEventQueryDAO;
 import org.apache.skywalking.oap.server.library.client.elasticsearch.ElasticSearchClient;
 import org.apache.skywalking.oap.server.storage.plugin.elasticsearch.base.EsDAO;
 import org.apache.skywalking.oap.server.storage.plugin.elasticsearch.base.IndexController;
 import org.apache.skywalking.oap.server.storage.plugin.elasticsearch.base.MatchCNameBuilder;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.util.Objects.isNull;
@@ -70,18 +68,16 @@ public class ESEventQueryDAO extends EsDAO implements IEventQueryDAO {
         final String index =
             IndexController.LogicIndicesRegister.getPhysicalTableName(Event.INDEX_NAME);
         final SearchResponse response = getClient().search(index, searchBuilder.build());
-        return new Events(
-            response.getHits().getHits().stream()
-                    .map(this::parseSearchHit)
-                    .collect(Collectors.toList()));
+        final Events events = new Events();
+        events.setTotal(response.getHits().getTotal());
+        events.setEvents(response.getHits().getHits().stream()
+                                 .map(this::parseSearchHit)
+                                 .collect(Collectors.toList()));
+        return events;
     }
 
     private void buildMustQueryListByCondition(final EventQueryCondition condition,
                                                final BoolQueryBuilder query) {
-        if (IndexController.LogicIndicesRegister.isMergedTable(Event.INDEX_NAME)) {
-            query.must(Query.term(IndexController.LogicIndicesRegister.METRIC_TABLE_NAME, Event.INDEX_NAME));
-        }
-        
         if (!isNullOrEmpty(condition.getUuid())) {
             query.must(Query.term(Event.UUID, condition.getUuid()));
         }
@@ -118,10 +114,6 @@ public class ESEventQueryDAO extends EsDAO implements IEventQueryDAO {
             if (startTime.getEndTimestamp() > 0) {
                 query.must(Query.range(Event.END_TIME).lt(startTime.getEndTimestamp()));
             }
-        }
-
-        if (!isNullOrEmpty(condition.getLayer())) {
-            query.must(Query.term(Event.LAYER, condition.getLayer()));
         }
     }
 
@@ -186,8 +178,6 @@ public class ESEventQueryDAO extends EsDAO implements IEventQueryDAO {
         if (!endTimeStr.isEmpty() && !Objects.equals(endTimeStr, "0")) {
             event.setEndTime(Long.parseLong(endTimeStr));
         }
-
-        event.setLayer(Layer.valueOf(Integer.parseInt(searchHit.getSource().get(Event.LAYER).toString())).name());
 
         return event;
     }

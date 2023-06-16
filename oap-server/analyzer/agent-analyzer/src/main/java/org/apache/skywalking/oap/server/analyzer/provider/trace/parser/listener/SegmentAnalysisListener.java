@@ -18,13 +18,12 @@
 
 package org.apache.skywalking.oap.server.analyzer.provider.trace.parser.listener;
 
+import java.util.Arrays;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.skywalking.apm.network.language.agent.v3.SegmentObject;
 import org.apache.skywalking.apm.network.language.agent.v3.SpanObject;
-import org.apache.skywalking.oap.server.core.analysis.manual.searchtag.TagType;
-import org.apache.skywalking.oap.server.core.config.SearchableTracesTagsWatcher;
-import org.apache.skywalking.oap.server.core.source.TagAutocomplete;
 import org.apache.skywalking.oap.server.library.util.StringUtil;
 import org.apache.skywalking.oap.server.analyzer.provider.AnalyzerModuleConfig;
 import org.apache.skywalking.oap.server.analyzer.provider.trace.parser.listener.strategy.SegmentStatusAnalyzer;
@@ -32,6 +31,7 @@ import org.apache.skywalking.oap.server.analyzer.provider.trace.parser.listener.
 import org.apache.skywalking.oap.server.core.Const;
 import org.apache.skywalking.oap.server.core.CoreModule;
 import org.apache.skywalking.oap.server.core.analysis.IDManager;
+import org.apache.skywalking.oap.server.core.analysis.NodeType;
 import org.apache.skywalking.oap.server.core.analysis.TimeBucket;
 import org.apache.skywalking.oap.server.core.analysis.manual.searchtag.Tag;
 import org.apache.skywalking.oap.server.core.config.ConfigService;
@@ -51,7 +51,7 @@ public class SegmentAnalysisListener implements FirstAnalysisListener, EntryAnal
     private final TraceSegmentSampler sampler;
     private final boolean forceSampleErrorSegment;
     private final NamingControl namingControl;
-    private final SearchableTracesTagsWatcher searchableTagKeys;
+    private final List<String> searchableTagKeys;
     private final SegmentStatusAnalyzer segmentStatusAnalyzer;
 
     private final Segment segment = new Segment();
@@ -80,7 +80,7 @@ public class SegmentAnalysisListener implements FirstAnalysisListener, EntryAnal
             serviceName = namingControl.formatServiceName(segmentObject.getService());
             serviceId = IDManager.ServiceID.buildId(
                 serviceName,
-                true
+                NodeType.Normal
             );
         }
 
@@ -110,7 +110,7 @@ public class SegmentAnalysisListener implements FirstAnalysisListener, EntryAnal
         if (StringUtil.isEmpty(serviceId)) {
             serviceName = namingControl.formatServiceName(segmentObject.getService());
             serviceId = IDManager.ServiceID.buildId(
-                serviceName, true);
+                serviceName, NodeType.Normal);
         }
 
         endpointName = namingControl.formatEndpointName(serviceName, span.getOperationName());
@@ -149,14 +149,8 @@ public class SegmentAnalysisListener implements FirstAnalysisListener, EntryAnal
 
     private void appendSearchableTags(SpanObject span) {
         span.getTagsList().forEach(tag -> {
-            if (searchableTagKeys.getSearchableTags().contains(tag.getKey())) {
+            if (searchableTagKeys.contains(tag.getKey())) {
                 final Tag spanTag = new Tag(tag.getKey(), tag.getValue());
-                if (tag.getValue().length()  > Tag.TAG_LENGTH || spanTag.toString().length() > Tag.TAG_LENGTH) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Segment tag : {} length > : {}, dropped", spanTag, Tag.TAG_LENGTH);
-                    }
-                    return;
-                }
                 if (!segment.getTags().contains(spanTag)) {
                     segment.getTags().add(spanTag);
                 }
@@ -180,18 +174,6 @@ public class SegmentAnalysisListener implements FirstAnalysisListener, EntryAnal
         segment.setEndpointId(endpointId);
 
         sourceReceiver.receive(segment);
-        addAutocompleteTags();
-    }
-
-    private void addAutocompleteTags() {
-        segment.getTags().forEach(tag -> {
-            TagAutocomplete tagAutocomplete = new TagAutocomplete();
-            tagAutocomplete.setTagKey(tag.getKey());
-            tagAutocomplete.setTagValue(tag.getValue());
-            tagAutocomplete.setTagType(TagType.TRACE);
-            tagAutocomplete.setTimeBucket(TimeBucket.getMinuteTimeBucket(segment.getStartTime()));
-            sourceReceiver.receive(tagAutocomplete);
-        });
     }
 
     private enum SAMPLE_STATUS {
@@ -203,7 +185,7 @@ public class SegmentAnalysisListener implements FirstAnalysisListener, EntryAnal
         private final TraceSegmentSampler sampler;
         private final boolean forceSampleErrorSegment;
         private final NamingControl namingControl;
-        private final SearchableTracesTagsWatcher searchTagKeys;
+        private final List<String> searchTagKeys;
         private final SegmentStatusAnalyzer segmentStatusAnalyzer;
 
         public Factory(ModuleManager moduleManager, AnalyzerModuleConfig config) {
@@ -211,7 +193,7 @@ public class SegmentAnalysisListener implements FirstAnalysisListener, EntryAnal
             final ConfigService configService = moduleManager.find(CoreModule.NAME)
                                                              .provider()
                                                              .getService(ConfigService.class);
-            this.searchTagKeys = configService.getSearchableTracesTags();
+            this.searchTagKeys = Arrays.asList(configService.getSearchableTracesTags().split(Const.COMMA));
             this.sampler = new TraceSegmentSampler(config.getTraceSamplingPolicyWatcher());
             this.forceSampleErrorSegment = config.isForceSampleErrorSegment();
             this.namingControl = moduleManager.find(CoreModule.NAME)

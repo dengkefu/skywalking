@@ -18,6 +18,7 @@
 
 package org.apache.skywalking.oap.server.analyzer.agent.kafka.provider.handler;
 
+import java.util.List;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.skywalking.apm.network.management.v3.InstancePingPkg;
@@ -32,12 +33,10 @@ import org.apache.skywalking.oap.server.core.source.ISource;
 import org.apache.skywalking.oap.server.core.source.ServiceInstanceUpdate;
 import org.apache.skywalking.oap.server.core.source.SourceReceiver;
 import org.apache.skywalking.oap.server.library.module.ModuleManager;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
-
-import java.util.List;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
 
 public class ServiceManagementHandlerTest {
     private static final String TOPIC_NAME = "skywalking-managements";
@@ -49,20 +48,20 @@ public class ServiceManagementHandlerTest {
 
     private ModuleManager manager;
 
-    @RegisterExtension
-    public final SourceReceiverRule sourceReceiverRule = new SourceReceiverRule() {
+    @ClassRule
+    public static SourceReceiverRule SOURCE_RECEIVER = new SourceReceiverRule() {
 
         @Override
-        public void verify(final List<ISource> sourceList) {
+        protected void verify(final List<ISource> sourceList) throws Throwable {
             ServiceInstanceUpdate instanceUpdate = (ServiceInstanceUpdate) sourceList.get(0);
-            Assertions.assertEquals(instanceUpdate.getName(), SERVICE_INSTANCE);
+            Assert.assertEquals(instanceUpdate.getName(), SERVICE_INSTANCE);
 
-            ServiceInstanceUpdate instanceUpdate1 = (ServiceInstanceUpdate) sourceList.get(2);
-            Assertions.assertEquals(instanceUpdate1.getName(), SERVICE_INSTANCE);
+            ServiceInstanceUpdate instanceUpdate1 = (ServiceInstanceUpdate) sourceList.get(1);
+            Assert.assertEquals(instanceUpdate1.getName(), SERVICE_INSTANCE);
         }
     };
 
-    @BeforeEach
+    @Before
     public void setup() {
         manager = new MockModuleManager() {
             @Override
@@ -72,7 +71,7 @@ public class ServiceManagementHandlerTest {
                     protected void register() {
                         registerServiceImplementation(NamingControl.class, new NamingControl(
                             512, 512, 512, new EndpointNameGrouping()));
-                        registerServiceImplementation(SourceReceiver.class, sourceReceiverRule);
+                        registerServiceImplementation(SourceReceiver.class, SOURCE_RECEIVER);
                     }
                 });
             }
@@ -82,7 +81,7 @@ public class ServiceManagementHandlerTest {
 
     @Test
     public void testTopicName() {
-        Assertions.assertEquals(handler.getTopic(), TOPIC_NAME);
+        Assert.assertEquals(handler.getTopic(), TOPIC_NAME);
     }
 
     @Test

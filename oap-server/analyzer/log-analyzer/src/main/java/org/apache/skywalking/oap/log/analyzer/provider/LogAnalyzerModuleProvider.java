@@ -17,21 +17,21 @@
 
 package org.apache.skywalking.oap.log.analyzer.provider;
 
-import lombok.Getter;
 import org.apache.skywalking.oap.log.analyzer.module.LogAnalyzerModule;
 import org.apache.skywalking.oap.log.analyzer.provider.log.ILogAnalyzerService;
 import org.apache.skywalking.oap.log.analyzer.provider.log.LogAnalyzerServiceImpl;
 import org.apache.skywalking.oap.log.analyzer.provider.log.listener.LogFilterListener;
 import org.apache.skywalking.oap.server.configuration.api.ConfigurationModule;
 import org.apache.skywalking.oap.server.core.CoreModule;
+import org.apache.skywalking.oap.server.library.module.ModuleConfig;
 import org.apache.skywalking.oap.server.library.module.ModuleDefine;
 import org.apache.skywalking.oap.server.library.module.ModuleProvider;
 import org.apache.skywalking.oap.server.library.module.ModuleStartException;
 import org.apache.skywalking.oap.server.library.module.ServiceNotProvidedException;
 
 public class LogAnalyzerModuleProvider extends ModuleProvider {
-    @Getter
-    private LogAnalyzerModuleConfig moduleConfig;
+
+    private final LogAnalyzerModuleConfig moduleConfig = new LogAnalyzerModuleConfig();
 
     private LogAnalyzerServiceImpl logAnalyzerService;
 
@@ -46,18 +46,8 @@ public class LogAnalyzerModuleProvider extends ModuleProvider {
     }
 
     @Override
-    public ConfigCreator newConfigCreator() {
-        return new ConfigCreator<LogAnalyzerModuleConfig>() {
-            @Override
-            public Class type() {
-                return LogAnalyzerModuleConfig.class;
-            }
-
-            @Override
-            public void onInitialized(final LogAnalyzerModuleConfig initialized) {
-                moduleConfig = initialized;
-            }
-        };
+    public ModuleConfig createConfigBeanIfAbsent() {
+        return moduleConfig;
     }
 
     @Override

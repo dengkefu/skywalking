@@ -28,21 +28,10 @@
 # languages
 # ######
 # Languages declare which languages are using this component. Multi languages should be separated by `,`
-#
-# ######
-# priority
-# ######
-# Component ID priority represents the component is degree of closeness between the library and business codes
-# The higher the atomic number, the higher the priority, which mean it is closer to the business codes,
-# further away from OS kernel or general Computer Science concept.
-# The range of priorities is [0, 100], both sided included. 0 is the highest priority.
-# To keep forward compatibility, the default(when not set) priority is 50.
-# For example, a typical priority sequence is TCP < TLS(TCP) < RPC < HTTP < HTTPS < gRPC/SpringMVC/Dubbo
 
 Unknown:
   id: 0
   language: All
-  priority: 0
 Tomcat:
   id: 1
   languages: Java
@@ -85,11 +74,9 @@ SpringRestTemplate:
 SpringMVC:
   id: 14
   languages: Java
-  priority: 60
 Struts2:
   id: 15
   languages: Java
-  priority: 60
 NutzMVC:
   id: 16
   languages: Java
@@ -192,11 +179,9 @@ transport-client:
 http:
   id: 49
   languages: Java,C#,Node.js
-  priority: 45
 rpc:
   id: 50
   languages: Java,C#,Node.js
-  priority: 20
 RabbitMQ:
   id: 51
   languages: Java
@@ -328,7 +313,7 @@ spring-annotation:
   languages: Java
 HBase:
   id: 94
-  languages: Java,Python
+  languages: Java
 spring-kafka-consumer:
   id: 95
   languages: Java
@@ -377,13 +362,12 @@ MyBatis:
 tcp:
   id: 110
   languages: Java
-  priority: 10
 AzureHttpTrigger:
   id: 111
   languages: Java,C#,Node.js,Python
 Neo4j:
   id: 112
-  languages: Java,Python
+  languages: Java
 Sentinel:
   id: 113
   languages: Java
@@ -413,85 +397,6 @@ Apache-Kylin-jdbc-driver:
   languages: Java
 Apache-Kylin:
   id: 122
-  languages: Java
-GuavaEventBus:
-  id: 123
-  languages: Java
-AWSLambdaTrigger:
-  id: 124
-  languages: Java,C#,Node.js,Python
-AWSLambdaGatewayAPIHTTP:
-  id: 125
-  languages: Java,C#,Node.js,Python
-AWSLambdaGatewayAPIREST:
-  id: 126
-  languages: Java,C#,Node.js,Python
-Apache-ShenYu:
-  id: 127
-  languages: Java
-Hutool:
-  id: 128
-  languages: Java
-https:
-  id: 129
-  languages: ebpf
-  priority: 46
-tls:
-  id: 130
-  languages: ebpf, mesh
-  priority: 11
-Micronaut:
-  id: 131
-  languages: Java
-NATS:
-  id: 132
-  languages: Java
-Impala-jdbc-driver:
-  id: 133
-  languages: Java
-Impala:
-  id: 134
-  languages: Java
-EventMesh:
-  id: 135
-  languages: Java
-eventmesh-producer:
-  id: 136
-  languages: Java
-eventmesh-consumer:
-  id: 137
-  languages: Java
-AWSDynamoDB:
-  id: 138
-  languages: Java,C#,Node.js,Python
-AWSSNS:
-  id: 139
-  languages: Java,C#,Node.js,Python
-AWSSQS:
-  id: 140
-  languages: Java,C#,Node.js,Python
-Micrometer:
-  id: 141
-  languages: Java
-mtls:
-  id: 142
-  languages: ebpf, mesh
-  priority: 12
-amqp:
-  id: 143
-  languages: PHP
-  priority: 45
-amqp-producer:
-  id: 144
-  languages: PHP
-amqp-consumer:
-  id: 145
-  languages: PHP
-Jersey:
-  id: 146
-  languages: Java
-Grizzly:
-  id: 147
   languages: Java
 
 # .NET/.NET Core components
@@ -543,12 +448,6 @@ AspNet:
   languages: C#
 SmartSql:
   id: 3016
-  languages: C#
-FreeSql:
-  id: 3017
-  languages: C#
-FreeRedis:
-  id: 3018
   languages: C#
 
 # NoeJS components
@@ -607,12 +506,6 @@ Kratos:
 GoMysql:
   id: 5012
   languages: Golang
-OpenFunction:
-  id: 5013
-  languages: Golang,Node.js,Python,Java
-GoRedis:
-  id: 5014
-  languages: Golang
 
 # Lua components
 # [6000, 7000) for Lua agent
@@ -666,27 +559,6 @@ Celery:
 Falcon:
   id: 7012
   languages: Python
-MysqlClient:
-  id: 7013
-  languages: Python
-FastAPI:
-  id: 7014
-  languages: Python
-Bottle:
-  id: 7015
-  languages: Python
-AsyncPG:
-  id: 7016
-  languages: Python
-AIORedis:
-  id: 7017
-  languages: Python
-Websockets:
-  id: 7018
-  languages: Python
-HTTPX:
-  id: 7019
-  languages: Python
 
 # PHP components
 # [8000, 9000) for PHP agent
@@ -724,12 +596,6 @@ ajax:
   id: 10001
   languages: JavaScript
 
-# Rust components
-# [11000, 12000) for Rust agent
-Rust:
-  id: 11000
-  languages: Rust
-
 # Component Server mapping defines the server display names of some components
 # e.g.
 # Jedis is a client library in Java for Redis server
@@ -749,7 +615,6 @@ Component-Server-Mappings:
   h2-jdbc-driver: H2
   mysql-connector-java: Mysql
   Jedis: Redis
-  FreeRedis: Redis
   StackExchange.Redis: Redis
   Redisson: Redis
   Lettuce: Redis
@@ -779,12 +644,3 @@ Component-Server-Mappings:
   GoMysql: Mysql
   ClickHouse-jdbc-driver: ClickHouse
   Apache-Kylin-jdbc-driver: Apache-Kylin
-  MysqlClient: Mysql
-  AsyncPG: PostgreSQL
-  AIORedis: Redis
-  Impala-jdbc-driver: Impala
-  eventmesh-producer: EventMesh
-  eventmesh-consumer: EventMesh
-  amqp-producer: amqp
-  amqp-consumer: amqp
-  GoRedis: Redis

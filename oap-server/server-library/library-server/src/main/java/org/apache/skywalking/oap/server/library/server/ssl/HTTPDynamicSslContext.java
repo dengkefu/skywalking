@@ -25,21 +25,21 @@ import java.io.InputStream;
 import java.nio.file.Paths;
 import javax.net.ssl.SSLException;
 
-public class HTTPDynamicSslContext extends AbstractSslContext {
+public class HttpDynamicSslContext extends AbstractSslContext {
 
-    public static HTTPDynamicSslContext forServer(String privateKeyFile, String certChainFile) {
-        return new HTTPDynamicSslContext(privateKeyFile, certChainFile);
+    public static HttpDynamicSslContext forServer(String privateKeyFile, String certChainFile) {
+        return new HttpDynamicSslContext(privateKeyFile, certChainFile);
     }
 
-    public static HTTPDynamicSslContext forClient(String caFile) {
-        return new HTTPDynamicSslContext(caFile);
+    public static HttpDynamicSslContext forClient(String caFile) {
+        return new HttpDynamicSslContext(caFile);
     }
 
-    protected HTTPDynamicSslContext(String privateKeyFile, String certChainFile) {
+    protected HttpDynamicSslContext(String privateKeyFile, String certChainFile) {
         super(privateKeyFile, certChainFile, null);
     }
 
-    protected HTTPDynamicSslContext(String caFile) {
+    protected HttpDynamicSslContext(String caFile) {
         super(caFile);
     }
 

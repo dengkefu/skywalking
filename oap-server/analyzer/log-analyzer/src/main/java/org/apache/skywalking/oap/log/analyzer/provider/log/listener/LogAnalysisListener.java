@@ -25,7 +25,8 @@ import org.apache.skywalking.apm.network.logging.v3.LogData;
  */
 public interface LogAnalysisListener {
     /**
-     * The last step of the analysis process. Typically, the implementations execute corresponding DSL.
+     * The last step of the analysis process. Typically, the implementations forward the analysis results to the source
+     * receiver.
      */
     void build();
 

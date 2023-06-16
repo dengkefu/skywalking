@@ -18,25 +18,22 @@
 
 package org.apache.skywalking.oap.server.core.analysis.manual.relation.endpoint;
 
+import java.util.HashMap;
+import java.util.Map;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.skywalking.oap.server.core.analysis.MetricsExtension;
+import org.apache.skywalking.oap.server.core.Const;
 import org.apache.skywalking.oap.server.core.analysis.Stream;
 import org.apache.skywalking.oap.server.core.analysis.metrics.Metrics;
 import org.apache.skywalking.oap.server.core.analysis.worker.MetricsStreamProcessor;
 import org.apache.skywalking.oap.server.core.remote.grpc.proto.RemoteData;
 import org.apache.skywalking.oap.server.core.source.DefaultScopeDefine;
-import org.apache.skywalking.oap.server.core.storage.StorageID;
-import org.apache.skywalking.oap.server.core.storage.annotation.BanyanDB;
+import org.apache.skywalking.oap.server.core.storage.StorageHashMapBuilder;
 import org.apache.skywalking.oap.server.core.storage.annotation.Column;
-import org.apache.skywalking.oap.server.core.storage.type.Convert2Entity;
-import org.apache.skywalking.oap.server.core.storage.type.Convert2Storage;
-import org.apache.skywalking.oap.server.core.storage.type.StorageBuilder;
 
 @Stream(name = EndpointRelationServerSideMetrics.INDEX_NAME, scopeId = DefaultScopeDefine.ENDPOINT_RELATION,
     builder = EndpointRelationServerSideMetrics.Builder.class, processor = MetricsStreamProcessor.class)
-@MetricsExtension(supportDownSampling = true, supportUpdate = false, timeRelativeID = true)
 @EqualsAndHashCode(of = {
     "entityId"
 }, callSuper = true)
@@ -49,27 +46,26 @@ public class EndpointRelationServerSideMetrics extends Metrics {
 
     @Setter
     @Getter
-    @Column(name = SOURCE_ENDPOINT)
+    @Column(columnName = SOURCE_ENDPOINT)
     private String sourceEndpoint;
     @Setter
     @Getter
-    @Column(name = DEST_ENDPOINT)
+    @Column(columnName = DEST_ENDPOINT)
     private String destEndpoint;
     @Setter
     @Getter
-    @Column(name = COMPONENT_ID, storageOnly = true)
+    @Column(columnName = COMPONENT_ID, storageOnly = true)
     private int componentId;
     @Setter
     @Getter
-    @Column(name = ENTITY_ID, length = 512)
-    @BanyanDB.SeriesID(index = 0)
+    @Column(columnName = ENTITY_ID, length = 512)
     private String entityId;
 
     @Override
-    protected StorageID id0() {
-        return new StorageID()
-            .append(TIME_BUCKET, getTimeBucket())
-            .append(ENTITY_ID, getEntityId());
+    protected String id0() {
+        String splitJointId = String.valueOf(getTimeBucket());
+        splitJointId += Const.ID_CONNECTOR + entityId;
+        return splitJointId;
     }
 
     @Override
@@ -136,26 +132,28 @@ public class EndpointRelationServerSideMetrics extends Metrics {
         return remoteBuilder;
     }
 
-    public static class Builder implements StorageBuilder<EndpointRelationServerSideMetrics> {
+    public static class Builder implements StorageHashMapBuilder<EndpointRelationServerSideMetrics> {
+
         @Override
-        public EndpointRelationServerSideMetrics storage2Entity(final Convert2Entity converter) {
+        public EndpointRelationServerSideMetrics storage2Entity(Map<String, Object> dbMap) {
             EndpointRelationServerSideMetrics metrics = new EndpointRelationServerSideMetrics();
-            metrics.setSourceEndpoint((String) converter.get(SOURCE_ENDPOINT));
-            metrics.setDestEndpoint((String) converter.get(DEST_ENDPOINT));
-            metrics.setComponentId(((Number) converter.get(COMPONENT_ID)).intValue());
-            metrics.setTimeBucket(((Number) converter.get(TIME_BUCKET)).longValue());
-            metrics.setEntityId((String) converter.get(ENTITY_ID));
+            metrics.setSourceEndpoint((String) dbMap.get(SOURCE_ENDPOINT));
+            metrics.setDestEndpoint((String) dbMap.get(DEST_ENDPOINT));
+            metrics.setComponentId(((Number) dbMap.get(COMPONENT_ID)).intValue());
+            metrics.setTimeBucket(((Number) dbMap.get(TIME_BUCKET)).longValue());
+            metrics.setEntityId((String) dbMap.get(ENTITY_ID));
             return metrics;
         }
 
         @Override
-        public void entity2Storage(final EndpointRelationServerSideMetrics storageData,
-                                   final Convert2Storage converter) {
-            converter.accept(SOURCE_ENDPOINT, storageData.getSourceEndpoint());
-            converter.accept(DEST_ENDPOINT, storageData.getDestEndpoint());
-            converter.accept(COMPONENT_ID, storageData.getComponentId());
-            converter.accept(TIME_BUCKET, storageData.getTimeBucket());
-            converter.accept(ENTITY_ID, storageData.getEntityId());
+        public Map<String, Object> entity2Storage(EndpointRelationServerSideMetrics storageData) {
+            Map<String, Object> map = new HashMap<>();
+            map.put(SOURCE_ENDPOINT, storageData.getSourceEndpoint());
+            map.put(DEST_ENDPOINT, storageData.getDestEndpoint());
+            map.put(COMPONENT_ID, storageData.getComponentId());
+            map.put(TIME_BUCKET, storageData.getTimeBucket());
+            map.put(ENTITY_ID, storageData.getEntityId());
+            return map;
         }
     }
 }

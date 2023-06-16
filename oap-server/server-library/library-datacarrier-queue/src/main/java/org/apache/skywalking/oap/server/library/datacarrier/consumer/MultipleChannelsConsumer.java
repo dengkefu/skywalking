@@ -36,7 +36,7 @@ public class MultipleChannelsConsumer extends Thread {
 
     public MultipleChannelsConsumer(String threadName, long consumeCycle) {
         super(threadName);
-        this.consumeTargets = new ArrayList<>();
+        this.consumeTargets = new ArrayList<Group>();
         this.consumeCycle = consumeCycle;
     }
 
@@ -48,8 +48,8 @@ public class MultipleChannelsConsumer extends Thread {
         while (running) {
             boolean hasData = false;
             for (Group target : consumeTargets) {
-                boolean consumed = consume(target, consumeList);
-                hasData = hasData || consumed;
+                boolean consume = consume(target, consumeList);
+                hasData = hasData || consume;
             }
 
             if (!hasData) {
@@ -95,7 +95,7 @@ public class MultipleChannelsConsumer extends Thread {
     public void addNewTarget(Channels channels, IConsumer consumer) {
         Group group = new Group(channels, consumer);
         // Recreate the new list to avoid change list while the list is used in consuming.
-        ArrayList<Group> newList = new ArrayList<>();
+        ArrayList<Group> newList = new ArrayList<Group>();
         for (Group target : consumeTargets) {
             newList.add(target);
         }

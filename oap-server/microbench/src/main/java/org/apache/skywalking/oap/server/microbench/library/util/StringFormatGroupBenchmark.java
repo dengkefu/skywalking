@@ -20,14 +20,15 @@ package org.apache.skywalking.oap.server.microbench.library.util;
 
 import org.apache.skywalking.oap.server.library.util.StringFormatGroup;
 import org.apache.skywalking.oap.server.microbench.base.AbstractMicrobenchmark;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+
+import java.util.concurrent.TimeUnit;
+
+import org.junit.Assert;
+import org.junit.Test;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
-
-import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
@@ -37,11 +38,11 @@ public class StringFormatGroupBenchmark extends AbstractMicrobenchmark {
     public void testMatch() {
         StringFormatGroup group = new StringFormatGroup();
         group.addRule("/name/*/add", "/name/.+/add");
-        Assertions.assertEquals("/name/*/add", group.format("/name/test/add").getName());
+        Assert.assertEquals("/name/*/add", group.format("/name/test/add").getName());
 
         group = new StringFormatGroup();
         group.addRule("/name/*/add/{orderId}", "/name/.+/add/.*");
-        Assertions.assertEquals("/name/*/add/{orderId}", group.format("/name/test/add/12323").getName());
+        Assert.assertEquals("/name/*/add/{orderId}", group.format("/name/test/add/12323").getName());
     }
 
     @Benchmark
@@ -52,7 +53,7 @@ public class StringFormatGroupBenchmark extends AbstractMicrobenchmark {
         for (int i = 0; i < 100; i++) {
             group.addRule("/name/*/add/{orderId}" + "/" + 1, "/name/.+/add/.*" + "/abc");
         }
-        Assertions.assertEquals("/name/*/add/{orderId}", group.format("/name/test/add/12323").getName());
+        Assert.assertEquals("/name/*/add/{orderId}", group.format("/name/test/add/12323").getName());
     }
 
     /*********************************

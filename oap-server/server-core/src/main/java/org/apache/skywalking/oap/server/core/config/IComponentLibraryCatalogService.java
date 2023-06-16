@@ -28,9 +28,4 @@ public interface IComponentLibraryCatalogService extends Service {
     String getComponentName(int componentId);
 
     String getServerNameBasedOnComponent(int componentId);
-
-    /**
-     * @return true if the given componentB has high priority
-     */
-    boolean compare(int componentA, int componentB);
 }

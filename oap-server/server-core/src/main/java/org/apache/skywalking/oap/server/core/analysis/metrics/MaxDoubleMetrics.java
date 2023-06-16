@@ -23,7 +23,6 @@ import lombok.Setter;
 import org.apache.skywalking.oap.server.core.analysis.metrics.annotation.Entrance;
 import org.apache.skywalking.oap.server.core.analysis.metrics.annotation.MetricsFunction;
 import org.apache.skywalking.oap.server.core.analysis.metrics.annotation.SourceFrom;
-import org.apache.skywalking.oap.server.core.storage.annotation.BanyanDB;
 import org.apache.skywalking.oap.server.core.storage.annotation.Column;
 
 @MetricsFunction(functionName = "maxDouble")
@@ -33,8 +32,7 @@ public abstract class MaxDoubleMetrics extends Metrics implements DoubleValueHol
 
     @Getter
     @Setter
-    @Column(name = VALUE, dataType = Column.ValueDataType.COMMON_VALUE)
-    @BanyanDB.MeasureField
+    @Column(columnName = VALUE, dataType = Column.ValueDataType.COMMON_VALUE)
     private double value;
 
     @Entrance
@@ -53,5 +51,16 @@ public abstract class MaxDoubleMetrics extends Metrics implements DoubleValueHol
 
     @Override
     public void calculate() {
+    }
+
+    @Override
+    public boolean haveDefault() {
+        return true;
+    }
+
+    @Override
+    public boolean isDefaultValue() {
+        // Value in the query stage will ignore decimal places after a decimal point
+        return Double.valueOf(value).longValue() == 0;
     }
 }

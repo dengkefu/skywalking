@@ -28,7 +28,7 @@ public class ServiceTrafficDispatcher implements SourceDispatcher<Service> {
         ServiceTraffic traffic = new ServiceTraffic();
         traffic.setTimeBucket(source.getTimeBucket());
         traffic.setName(source.getName());
-        traffic.setLayer(source.getLayer());
+        traffic.setNodeType(source.getNodeType());
         MetricsStreamProcessor.getInstance().in(traffic);
     }
 }

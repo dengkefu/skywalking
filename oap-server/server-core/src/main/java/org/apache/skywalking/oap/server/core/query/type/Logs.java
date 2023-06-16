@@ -18,25 +18,18 @@
 
 package org.apache.skywalking.oap.server.core.query.type;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.experimental.Accessors;
-
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
 
 @Setter
 @Getter
-@Accessors(chain = true)
 public class Logs {
     private final List<Log> logs;
-    private String errorReason;
+    private int total;
 
     public Logs() {
         this.logs = new ArrayList<>();
-    }
-
-    public Logs(final List<Log> logs) {
-        this.logs = logs;
     }
 }

@@ -18,21 +18,17 @@
 
 package org.apache.skywalking.oap.server.library.util.yaml;
 
-import org.yaml.snakeyaml.LoaderOptions;
+import lombok.RequiredArgsConstructor;
 import org.yaml.snakeyaml.constructor.Constructor;
 
 /**
  * Whitelist constructor implementation for YAML snake.
  * Copied from Apache ShardingSphere.
  */
+@RequiredArgsConstructor
 public final class ClassFilterConstructor extends Constructor {
 
     private final Class<?>[] acceptClasses;
-
-    public ClassFilterConstructor(final Class<?>[] acceptClasses) {
-        super(new LoaderOptions());
-        this.acceptClasses = acceptClasses;
-    }
 
     @Override
     protected Class<?> getClassForName(final String name) throws ClassNotFoundException {

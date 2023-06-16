@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import org.apache.skywalking.apm.network.common.v3.DetectPoint;
-import org.apache.skywalking.apm.network.servicemesh.v3.HTTPServiceMeshMetric;
+import org.apache.skywalking.apm.network.servicemesh.v3.ServiceMeshMetric;
 import org.apache.skywalking.oap.server.library.module.ModuleManager;
 import org.apache.skywalking.oap.server.receiver.envoy.EnvoyMetricReceiverConfig;
 import org.apache.skywalking.oap.server.receiver.envoy.MetricServiceGRPCHandlerTestMain;
@@ -33,10 +33,9 @@ import org.apache.skywalking.oap.server.receiver.envoy.ServiceMetaInfoFactoryImp
 import org.apache.skywalking.oap.server.receiver.envoy.als.AccessLogAnalyzer;
 import org.apache.skywalking.oap.server.receiver.envoy.als.Role;
 import org.apache.skywalking.oap.server.receiver.envoy.als.ServiceMetaInfo;
-import org.apache.skywalking.oap.server.receiver.envoy.als.istio.IstioServiceEntryRegistry;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -46,7 +45,7 @@ public class K8SALSServiceMeshHTTPAnalysisTest {
 
     private MockK8SAnalysis analysis;
 
-    @BeforeEach
+    @Before
     public void setUp() {
         analysis = new MockK8SAnalysis();
         analysis.init(null, new EnvoyMetricReceiverConfig() {
@@ -64,7 +63,7 @@ public class K8SALSServiceMeshHTTPAnalysisTest {
             JsonFormat.parser().merge(isr, requestBuilder);
             Role identify = analysis.identify(requestBuilder.getIdentifier(), Role.NONE);
 
-            Assertions.assertEquals(Role.PROXY, identify);
+            Assert.assertEquals(Role.PROXY, identify);
         }
     }
 
@@ -75,7 +74,7 @@ public class K8SALSServiceMeshHTTPAnalysisTest {
             JsonFormat.parser().merge(isr, requestBuilder);
             Role identify = analysis.identify(requestBuilder.getIdentifier(), Role.NONE);
 
-            Assertions.assertEquals(Role.SIDECAR, identify);
+            Assert.assertEquals(Role.SIDECAR, identify);
         }
     }
 
@@ -87,17 +86,17 @@ public class K8SALSServiceMeshHTTPAnalysisTest {
 
             AccessLogAnalyzer.Result result = this.analysis.analysis(AccessLogAnalyzer.Result.builder().build(), requestBuilder.getIdentifier(), requestBuilder.getHttpLogs().getLogEntry(0), Role.PROXY);
 
-            Assertions.assertEquals(2, result.getMetrics().getHttpMetrics().getMetricsCount());
+            Assert.assertEquals(2, result.getMetrics().size());
 
-            HTTPServiceMeshMetric incoming = result.getMetrics().getHttpMetrics().getMetrics(0);
-            Assertions.assertEquals("UNKNOWN", incoming.getSourceServiceName());
-            Assertions.assertEquals("ingress", incoming.getDestServiceName());
-            Assertions.assertEquals(DetectPoint.server, incoming.getDetectPoint());
+            ServiceMeshMetric.Builder incoming = result.getMetrics().get(0);
+            Assert.assertEquals("UNKNOWN", incoming.getSourceServiceName());
+            Assert.assertEquals("ingress", incoming.getDestServiceName());
+            Assert.assertEquals(DetectPoint.server, incoming.getDetectPoint());
 
-            HTTPServiceMeshMetric outgoing = result.getMetrics().getHttpMetrics().getMetrics(1);
-            Assertions.assertEquals("ingress", outgoing.getSourceServiceName());
-            Assertions.assertEquals("productpage", outgoing.getDestServiceName());
-            Assertions.assertEquals(DetectPoint.client, outgoing.getDetectPoint());
+            ServiceMeshMetric.Builder outgoing = result.getMetrics().get(1);
+            Assert.assertEquals("ingress", outgoing.getSourceServiceName());
+            Assert.assertEquals("productpage", outgoing.getDestServiceName());
+            Assert.assertEquals(DetectPoint.client, outgoing.getDetectPoint());
         }
     }
 
@@ -109,12 +108,12 @@ public class K8SALSServiceMeshHTTPAnalysisTest {
 
             AccessLogAnalyzer.Result result = this.analysis.analysis(AccessLogAnalyzer.Result.builder().build(), requestBuilder.getIdentifier(), requestBuilder.getHttpLogs().getLogEntry(0), Role.SIDECAR);
 
-            Assertions.assertEquals(1, result.getMetrics().getHttpMetrics().getMetricsCount());
+            Assert.assertEquals(1, result.getMetrics().size());
 
-            HTTPServiceMeshMetric incoming = result.getMetrics().getHttpMetrics().getMetrics(0);
-            Assertions.assertEquals("", incoming.getSourceServiceName());
-            Assertions.assertEquals("productpage", incoming.getDestServiceName());
-            Assertions.assertEquals(DetectPoint.server, incoming.getDetectPoint());
+            ServiceMeshMetric.Builder incoming = result.getMetrics().get(0);
+            Assert.assertEquals("", incoming.getSourceServiceName());
+            Assert.assertEquals("productpage", incoming.getDestServiceName());
+            Assert.assertEquals(DetectPoint.server, incoming.getDetectPoint());
         }
     }
 
@@ -126,12 +125,12 @@ public class K8SALSServiceMeshHTTPAnalysisTest {
 
             AccessLogAnalyzer.Result result = this.analysis.analysis(AccessLogAnalyzer.Result.builder().build(), requestBuilder.getIdentifier(), requestBuilder.getHttpLogs().getLogEntry(0), Role.SIDECAR);
 
-            Assertions.assertEquals(1, result.getMetrics().getHttpMetrics().getMetricsCount());
+            Assert.assertEquals(1, result.getMetrics().size());
 
-            HTTPServiceMeshMetric incoming = result.getMetrics().getHttpMetrics().getMetrics(0);
-            Assertions.assertEquals("productpage", incoming.getSourceServiceName());
-            Assertions.assertEquals("review", incoming.getDestServiceName());
-            Assertions.assertEquals(DetectPoint.server, incoming.getDetectPoint());
+            ServiceMeshMetric.Builder incoming = result.getMetrics().get(0);
+            Assert.assertEquals("productpage", incoming.getSourceServiceName());
+            Assert.assertEquals("review", incoming.getDestServiceName());
+            Assert.assertEquals(DetectPoint.server, incoming.getDetectPoint());
         }
     }
 
@@ -143,12 +142,12 @@ public class K8SALSServiceMeshHTTPAnalysisTest {
 
             AccessLogAnalyzer.Result result = this.analysis.analysis(AccessLogAnalyzer.Result.builder().build(), requestBuilder.getIdentifier(), requestBuilder.getHttpLogs().getLogEntry(0), Role.SIDECAR);
 
-            Assertions.assertEquals(1, result.getMetrics().getHttpMetrics().getMetricsCount());
+            Assert.assertEquals(1, result.getMetrics().size());
 
-            HTTPServiceMeshMetric incoming = result.getMetrics().getHttpMetrics().getMetrics(0);
-            Assertions.assertEquals("productpage", incoming.getSourceServiceName());
-            Assertions.assertEquals("detail", incoming.getDestServiceName());
-            Assertions.assertEquals(DetectPoint.client, incoming.getDetectPoint());
+            ServiceMeshMetric.Builder incoming = result.getMetrics().get(0);
+            Assert.assertEquals("productpage", incoming.getSourceServiceName());
+            Assert.assertEquals("detail", incoming.getDestServiceName());
+            Assert.assertEquals(DetectPoint.client, incoming.getDetectPoint());
         }
     }
 
@@ -157,14 +156,12 @@ public class K8SALSServiceMeshHTTPAnalysisTest {
         @Override
         public void init(ModuleManager manager, EnvoyMetricReceiverConfig config) {
             this.config = config;
-            k8sServiceRegistry = mock(K8SServiceRegistry.class);
-            istioServiceRegistry = mock(IstioServiceEntryRegistry.class);
-            when(istioServiceRegistry.findService(anyString())).thenReturn(config.serviceMetaInfoFactory().unknown());
-            when(k8sServiceRegistry.findService(anyString())).thenReturn(config.serviceMetaInfoFactory().unknown());
-            when(k8sServiceRegistry.findService("10.44.2.56")).thenReturn(new ServiceMetaInfo("ingress", "ingress-Inst"));
-            when(k8sServiceRegistry.findService("10.44.2.54")).thenReturn(new ServiceMetaInfo("productpage", "productpage-Inst"));
-            when(k8sServiceRegistry.findService("10.44.6.66")).thenReturn(new ServiceMetaInfo("detail", "detail-Inst"));
-            when(k8sServiceRegistry.findService("10.44.2.55")).thenReturn(new ServiceMetaInfo("review", "review-Inst"));
+            serviceRegistry = mock(K8SServiceRegistry.class);
+            when(serviceRegistry.findService(anyString())).thenReturn(config.serviceMetaInfoFactory().unknown());
+            when(serviceRegistry.findService("10.44.2.56")).thenReturn(new ServiceMetaInfo("ingress", "ingress-Inst"));
+            when(serviceRegistry.findService("10.44.2.54")).thenReturn(new ServiceMetaInfo("productpage", "productpage-Inst"));
+            when(serviceRegistry.findService("10.44.6.66")).thenReturn(new ServiceMetaInfo("detail", "detail-Inst"));
+            when(serviceRegistry.findService("10.44.2.55")).thenReturn(new ServiceMetaInfo("review", "review-Inst"));
         }
 
     }

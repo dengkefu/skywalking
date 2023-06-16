@@ -19,7 +19,6 @@ package org.apache.skywalking.oap.server.core.analysis.manual.log;
 
 import org.apache.skywalking.oap.server.core.analysis.SourceDispatcher;
 import org.apache.skywalking.oap.server.core.analysis.manual.searchtag.Tag;
-import org.apache.skywalking.oap.server.core.analysis.record.LongText;
 import org.apache.skywalking.oap.server.core.analysis.worker.RecordStreamProcessor;
 import org.apache.skywalking.oap.server.core.source.Log;
 
@@ -38,9 +37,10 @@ public class LogRecordDispatcher implements SourceDispatcher<Log> {
         record.setTraceSegmentId(source.getTraceSegmentId());
         record.setSpanId(source.getSpanId());
         record.setContentType(source.getContentType().value());
-        record.setContent(new LongText(source.getContent()));
+        record.setContent(source.getContent());
         record.setTagsRawData(source.getTagsRawData());
         record.setTagsInString(Tag.Util.toStringList(source.getTags()));
+        record.setTags(source.getTags());
 
         RecordStreamProcessor.getInstance().in(record);
     }

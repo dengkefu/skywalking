@@ -19,9 +19,8 @@
 package org.apache.skywalking.oap.server.core.analysis.metrics;
 
 import org.apache.skywalking.oap.server.core.remote.grpc.proto.RemoteData;
-import org.apache.skywalking.oap.server.core.storage.StorageID;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class MetricsTest {
     @Test
@@ -29,13 +28,13 @@ public class MetricsTest {
         MetricsMocker mocker = new MetricsMocker();
 
         mocker.setTimeBucket(201809120511L);
-        Assertions.assertEquals(2018091205L, mocker.toTimeBucketInHour());
-        Assertions.assertEquals(20180912L, mocker.toTimeBucketInDay());
+        Assert.assertEquals(2018091205L, mocker.toTimeBucketInHour());
+        Assert.assertEquals(20180912L, mocker.toTimeBucketInDay());
 
         mocker = new MetricsMocker();
 
         mocker.setTimeBucket(2018091205L);
-        Assertions.assertEquals(20180912L, mocker.toTimeBucketInDay());
+        Assert.assertEquals(20180912L, mocker.toTimeBucketInDay());
     }
 
     @Test
@@ -49,7 +48,7 @@ public class MetricsTest {
         } catch (IllegalStateException e) {
             status = false;
         }
-        Assertions.assertFalse(status);
+        Assert.assertFalse(status);
 
         mocker = new MetricsMocker();
         mocker.setTimeBucket(20180912L);
@@ -60,7 +59,7 @@ public class MetricsTest {
         } catch (IllegalStateException e) {
             status = false;
         }
-        Assertions.assertFalse(status);
+        Assert.assertFalse(status);
 
         status = true;
         try {
@@ -68,13 +67,13 @@ public class MetricsTest {
         } catch (IllegalStateException e) {
             status = false;
         }
-        Assertions.assertFalse(status);
+        Assert.assertFalse(status);
     }
 
     public class MetricsMocker extends Metrics {
 
         @Override
-        protected StorageID id0() {
+        protected String id0() {
             return null;
         }
 

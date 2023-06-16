@@ -18,9 +18,7 @@
 
 package org.apache.skywalking.oap.server.storage.plugin.jdbc.mysql;
 
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.junit.Test;
 
 /**
  * This is a very special test case. It isn't for feature testing.
@@ -29,8 +27,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * codes and distribution by using JDBC.
  */
 public class PreventRedistributionMySQLDriverTest {
-    @Test
+    @Test(expected = ClassNotFoundException.class)
     public void TestMySQLDriverNotExist() throws ClassNotFoundException {
-        assertThrows(ClassNotFoundException.class, () -> Class.forName("com.mysql.cj.jdbc.Driver"));
+        Class.forName("com.mysql.cj.jdbc.Driver");
     }
 }

@@ -18,7 +18,6 @@
 
 package org.apache.skywalking.oap.server.receiver.trace.provider.handler.v8.grpc;
 
-import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.skywalking.apm.network.common.v3.Commands;
@@ -37,12 +36,14 @@ import org.apache.skywalking.oap.server.telemetry.api.MetricsTag;
 
 @Slf4j
 public class TraceSegmentReportServiceHandler extends TraceSegmentReportServiceGrpc.TraceSegmentReportServiceImplBase implements GRPCHandler {
+    private final ModuleManager moduleManager;
     private HistogramMetrics histogram;
     private CounterMetrics errorCounter;
 
     private ISegmentParserService segmentParserService;
 
     public TraceSegmentReportServiceHandler(ModuleManager moduleManager) {
+        this.moduleManager = moduleManager;
         this.segmentParserService = moduleManager.find(AnalyzerModule.NAME)
                                                  .provider()
                                                  .getService(ISegmentParserService.class);
@@ -81,14 +82,8 @@ public class TraceSegmentReportServiceHandler extends TraceSegmentReportServiceG
 
             @Override
             public void onError(Throwable throwable) {
-                Status status = Status.fromThrowable(throwable);
-                if (Status.CANCELLED.getCode() == status.getCode()) {
-                    if (log.isDebugEnabled()) {
-                        log.debug(throwable.getMessage(), throwable);
-                    }
-                    return;
-                }
                 log.error(throwable.getMessage(), throwable);
+                responseObserver.onCompleted();
             }
 
             @Override

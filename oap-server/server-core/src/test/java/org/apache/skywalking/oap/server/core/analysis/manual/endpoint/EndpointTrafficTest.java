@@ -19,9 +19,8 @@
 package org.apache.skywalking.oap.server.core.analysis.manual.endpoint;
 
 import org.apache.skywalking.oap.server.core.source.DetectPoint;
-import org.apache.skywalking.oap.server.core.storage.type.HashMapConverter;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class EndpointTrafficTest {
     @Test
@@ -38,7 +37,7 @@ public class EndpointTrafficTest {
         EndpointTraffic another = new EndpointTraffic();
         another.deserialize(endpointTraffic.serialize().build());
 
-        Assertions.assertEquals(endpointTraffic, another);
+        Assert.assertEquals(endpointTraffic, another);
     }
 
     @Test
@@ -53,10 +52,8 @@ public class EndpointTrafficTest {
         endpointTraffic.setName(endpointName);
 
         final EndpointTraffic.Builder builder = new EndpointTraffic.Builder();
-        final HashMapConverter.ToStorage toStorage = new HashMapConverter.ToStorage();
-        builder.entity2Storage(endpointTraffic, toStorage);
-        final EndpointTraffic another = builder.storage2Entity(new HashMapConverter.ToEntity(toStorage.obtain()));
+        final EndpointTraffic another = builder.storage2Entity(builder.entity2Storage(endpointTraffic));
 
-        Assertions.assertEquals(endpointTraffic, another);
+        Assert.assertEquals(endpointTraffic, another);
     }
 }

@@ -24,9 +24,8 @@ import com.linecorp.armeria.client.Endpoint;
 import com.linecorp.armeria.client.endpoint.EndpointGroup;
 import com.linecorp.armeria.client.endpoint.healthcheck.HealthCheckedEndpointGroup;
 import com.linecorp.armeria.client.endpoint.healthcheck.HealthCheckedEndpointGroupBuilder;
-import com.linecorp.armeria.client.logging.LoggingClient;
 import com.linecorp.armeria.common.SessionProtocol;
-import com.linecorp.armeria.common.auth.AuthToken;
+import com.linecorp.armeria.common.auth.BasicToken;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -38,13 +37,12 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.net.ssl.TrustManagerFactory;
 import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
+
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 import org.apache.skywalking.oap.server.library.util.StringUtil;
 
-@Slf4j
 public final class ElasticSearchBuilder {
     private static final int NUM_PROC = Runtime.getRuntime().availableProcessors();
 
@@ -61,8 +59,6 @@ public final class ElasticSearchBuilder {
     private String trustStorePath;
 
     private String trustStorePass;
-
-    private Duration responseTimeout = Duration.ofSeconds(15);
 
     private Duration connectTimeout = Duration.ofMillis(500);
 
@@ -122,12 +118,6 @@ public final class ElasticSearchBuilder {
         return this;
     }
 
-    public ElasticSearchBuilder responseTimeout(int responseTimeout) {
-        checkArgument(responseTimeout >= 0, "responseTimeout must be 0 or positive");
-        this.responseTimeout = Duration.ofMillis(responseTimeout);
-        return this;
-    }
-
     public ElasticSearchBuilder socketTimeout(int socketTimeout) {
         checkArgument(socketTimeout > 0, "socketTimeout must be positive");
         this.socketTimeout = Duration.ofMillis(socketTimeout);
@@ -181,10 +171,6 @@ public final class ElasticSearchBuilder {
                                       .clientFactory(clientFactory)
                                       .retryInterval(healthCheckRetryInterval)
                                       .withClientOptions(options -> {
-                                          options.decorator(
-                                              LoggingClient.builder()
-                                                           .logger(log)
-                                                           .newDecorator());
                                           options.decorator((delegate, ctx, req) -> {
                                               ctx.logBuilder().name("health-check");
                                               return delegate.execute(ctx, req);
@@ -192,7 +178,7 @@ public final class ElasticSearchBuilder {
                                           return options;
                                       });
         if (StringUtil.isNotBlank(username) && StringUtil.isNotBlank(password)) {
-            endpointGroupBuilder.auth(AuthToken.ofBasic(username, password));
+            endpointGroupBuilder.auth(BasicToken.of(username, password));
         }
         final HealthCheckedEndpointGroup endpointGroup = endpointGroupBuilder.build();
 
@@ -202,8 +188,7 @@ public final class ElasticSearchBuilder {
             password,
             endpointGroup,
             clientFactory,
-            healthyListener,
-            responseTimeout
+            healthyListener
         );
     }
 }

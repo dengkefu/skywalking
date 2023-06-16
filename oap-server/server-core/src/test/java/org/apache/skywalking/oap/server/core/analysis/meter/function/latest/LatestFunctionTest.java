@@ -18,37 +18,35 @@
 
 package org.apache.skywalking.oap.server.core.analysis.meter.function.latest;
 
-import org.apache.skywalking.oap.server.core.analysis.Layer;
+import java.util.Map;
 import org.apache.skywalking.oap.server.core.analysis.meter.MeterEntity;
 import org.apache.skywalking.oap.server.core.config.NamingControl;
 import org.apache.skywalking.oap.server.core.config.group.EndpointNameGrouping;
-import org.apache.skywalking.oap.server.core.storage.type.HashMapConverter;
-import org.apache.skywalking.oap.server.core.storage.type.StorageBuilder;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.apache.skywalking.oap.server.core.storage.StorageHashMapBuilder;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.runners.MockitoJUnitRunner;
 
-import java.util.Map;
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-
-@ExtendWith(MockitoExtension.class)
+@RunWith(MockitoJUnitRunner.class)
 public class LatestFunctionTest {
 
     @Spy
     private LatestFunction function;
 
-    @BeforeAll
+    @BeforeClass
     public static void setup() {
         MeterEntity.setNamingControl(
             new NamingControl(512, 512, 512, new EndpointNameGrouping()));
     }
 
-    @AfterAll
+    @AfterClass
     public static void tearDown() {
         MeterEntity.setNamingControl(null);
     }
@@ -56,46 +54,44 @@ public class LatestFunctionTest {
     @Test
     public void testAccept() {
         long time = 1597113318673L;
-        function.accept(MeterEntity.newService("latest_sync_time", Layer.GENERAL), time);
-        assertThat(function.getValue()).isEqualTo(time);
+        function.accept(MeterEntity.newService("latest_sync_time"), time);
+        assertThat(function.getValue(), is(time));
         time = 1597113447737L;
-        function.accept(MeterEntity.newService("latest_sync_time", Layer.GENERAL), time);
-        assertThat(function.getValue()).isEqualTo(time);
+        function.accept(MeterEntity.newService("latest_sync_time"), time);
+        assertThat(function.getValue(), is(time));
     }
 
     @Test
     public void testCalculate() {
         long time1 = 1597113318673L;
         long time2 = 1597113447737L;
-        function.accept(MeterEntity.newService("latest_sync_time", Layer.GENERAL), time1);
-        function.accept(MeterEntity.newService("latest_sync_time", Layer.GENERAL), time2);
+        function.accept(MeterEntity.newService("latest_sync_time"), time1);
+        function.accept(MeterEntity.newService("latest_sync_time"), time2);
         function.calculate();
-        assertThat(function.getValue()).isEqualTo(time2);
+        assertThat(function.getValue(), is(time2));
     }
 
     @Test
     public void testSerialize() {
         long time = 1597113447737L;
-        function.accept(MeterEntity.newService("latest_sync_time", Layer.GENERAL), time);
+        function.accept(MeterEntity.newService("latest_sync_time"), time);
         LatestFunction function2 = Mockito.spy(LatestFunction.class);
         function2.deserialize(function.serialize().build());
-        assertThat(function2.getEntityId()).isEqualTo(function.getEntityId());
-        assertThat(function2.getTimeBucket()).isEqualTo(function.getTimeBucket());
+        assertThat(function2.getEntityId(), is(function.getEntityId()));
+        assertThat(function2.getTimeBucket(), is(function.getTimeBucket()));
     }
 
     @Test
     public void testBuilder() throws IllegalAccessException, InstantiationException {
         long time = 1597113447737L;
-        function.accept(MeterEntity.newService("latest_sync_time", Layer.GENERAL), time);
+        function.accept(MeterEntity.newService("latest_sync_time"), time);
         function.calculate();
-        StorageBuilder<LatestFunction> storageBuilder = function.builder().newInstance();
+        StorageHashMapBuilder<LatestFunction> storageBuilder = function.builder().newInstance();
 
-        final HashMapConverter.ToStorage toStorage = new HashMapConverter.ToStorage();
-        storageBuilder.entity2Storage(function, toStorage);
-        final Map<String, Object> map = toStorage.obtain();
+        Map<String, Object> map = storageBuilder.entity2Storage(function);
         map.put(LatestFunction.VALUE, map.get(LatestFunction.VALUE));
 
-        LatestFunction function2 = storageBuilder.storage2Entity(new HashMapConverter.ToEntity(map));
-        assertThat(function2.getValue()).isEqualTo(function.getValue());
+        LatestFunction function2 = storageBuilder.storage2Entity(map);
+        assertThat(function2.getValue(), is(function.getValue()));
     }
 }

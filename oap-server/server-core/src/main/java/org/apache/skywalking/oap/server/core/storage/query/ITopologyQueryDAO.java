@@ -24,7 +24,6 @@ import org.apache.skywalking.oap.server.core.analysis.manual.relation.instance.S
 import org.apache.skywalking.oap.server.core.analysis.manual.relation.instance.ServiceInstanceRelationServerSideMetrics;
 import org.apache.skywalking.oap.server.core.analysis.manual.relation.service.ServiceRelationClientSideMetrics;
 import org.apache.skywalking.oap.server.core.analysis.manual.relation.service.ServiceRelationServerSideMetrics;
-import org.apache.skywalking.oap.server.core.query.input.Duration;
 import org.apache.skywalking.oap.server.core.query.type.Call;
 import org.apache.skywalking.oap.server.library.module.Service;
 
@@ -32,24 +31,26 @@ public interface ITopologyQueryDAO extends Service {
     /**
      * Query {@link ServiceRelationServerSideMetrics} through the given conditions
      */
-    List<Call.CallDetail> loadServiceRelationsDetectedAtServerSide(Duration duration,
+    List<Call.CallDetail> loadServiceRelationsDetectedAtServerSide(long startTB, long endTB,
                                                                    List<String> serviceIds) throws IOException;
 
     /**
      * Query {@link ServiceRelationClientSideMetrics} through the given conditions
      */
-    List<Call.CallDetail> loadServiceRelationDetectedAtClientSide(Duration duration,
+    List<Call.CallDetail> loadServiceRelationDetectedAtClientSide(long startTB, long endTB,
                                                                   List<String> serviceIds) throws IOException;
 
     /**
      * Query {@link ServiceRelationServerSideMetrics} globally, without given serviceIds
      */
-    List<Call.CallDetail> loadServiceRelationsDetectedAtServerSide(Duration duration) throws IOException;
+    List<Call.CallDetail> loadServiceRelationsDetectedAtServerSide(long startTB,
+                                                                   long endTB) throws IOException;
 
     /**
      * Query {@link ServiceRelationClientSideMetrics} globally, without given serviceIds
      */
-    List<Call.CallDetail> loadServiceRelationDetectedAtClientSide(Duration duration) throws IOException;
+    List<Call.CallDetail> loadServiceRelationDetectedAtClientSide(long startTB,
+                                                                  long endTB) throws IOException;
 
     /**
      * Query {@link ServiceInstanceRelationServerSideMetrics} through given conditions, including the specific
@@ -57,7 +58,8 @@ public interface ITopologyQueryDAO extends Service {
      */
     List<Call.CallDetail> loadInstanceRelationDetectedAtServerSide(String clientServiceId,
                                                                    String serverServiceId,
-                                                                   Duration duration) throws IOException;
+                                                                   long startTB,
+                                                                   long endTB) throws IOException;
 
     /**
      * Query {@link ServiceInstanceRelationClientSideMetrics} through given conditions, including the specific
@@ -65,25 +67,13 @@ public interface ITopologyQueryDAO extends Service {
      */
     List<Call.CallDetail> loadInstanceRelationDetectedAtClientSide(String clientServiceId,
                                                                    String serverServiceId,
-                                                                   Duration duration) throws IOException;
+                                                                   long startTB,
+                                                                   long endTB) throws IOException;
 
     /**
      * Query the endpoint relationship. Endpoint dependency is not detected from server side agent.
      */
-    List<Call.CallDetail> loadEndpointRelation(Duration duration,
+    List<Call.CallDetail> loadEndpointRelation(long startTB,
+                                               long endTB,
                                                String destEndpointId) throws IOException;
-
-    /**
-     * Query {@link org.apache.skywalking.oap.server.core.analysis.manual.relation.process.ProcessRelationClientSideMetrics}
-     * through given conditions, including the specific service instance id
-     */
-    List<Call.CallDetail> loadProcessRelationDetectedAtClientSide(String serviceInstanceId,
-                                                                  Duration duration) throws IOException;
-
-    /**
-     * Query {@link org.apache.skywalking.oap.server.core.analysis.manual.relation.process.ProcessRelationServerSideMetrics}
-     * through given conditions, including the specific service instance id
-     */
-    List<Call.CallDetail> loadProcessRelationDetectedAtServerSide(String serviceInstanceId,
-                                                                  Duration duration) throws IOException;
 }

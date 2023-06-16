@@ -20,9 +20,12 @@ package org.apache.skywalking.oap.server.core.analysis.manual.instance;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.skywalking.oap.server.library.util.StringUtil;
 import org.apache.skywalking.oap.server.core.Const;
 import org.apache.skywalking.oap.server.core.analysis.IDManager;
 import org.apache.skywalking.oap.server.core.analysis.MetricsExtension;
@@ -30,14 +33,8 @@ import org.apache.skywalking.oap.server.core.analysis.Stream;
 import org.apache.skywalking.oap.server.core.analysis.metrics.Metrics;
 import org.apache.skywalking.oap.server.core.analysis.worker.MetricsStreamProcessor;
 import org.apache.skywalking.oap.server.core.remote.grpc.proto.RemoteData;
-import org.apache.skywalking.oap.server.core.storage.StorageID;
-import org.apache.skywalking.oap.server.core.storage.annotation.BanyanDB;
+import org.apache.skywalking.oap.server.core.storage.StorageHashMapBuilder;
 import org.apache.skywalking.oap.server.core.storage.annotation.Column;
-import org.apache.skywalking.oap.server.core.storage.annotation.ElasticSearch;
-import org.apache.skywalking.oap.server.core.storage.type.Convert2Entity;
-import org.apache.skywalking.oap.server.core.storage.type.Convert2Storage;
-import org.apache.skywalking.oap.server.core.storage.type.StorageBuilder;
-import org.apache.skywalking.oap.server.library.util.StringUtil;
 
 import static org.apache.skywalking.oap.server.core.source.DefaultScopeDefine.SERVICE_INSTANCE;
 
@@ -51,7 +48,7 @@ import static org.apache.skywalking.oap.server.core.source.DefaultScopeDefine.SE
 public class InstanceTraffic extends Metrics {
     public static final String INDEX_NAME = "instance_traffic";
     public static final String SERVICE_ID = "service_id";
-    public static final String NAME = "instance_traffic_name";
+    public static final String NAME = "name";
     public static final String LAST_PING_TIME_BUCKET = "last_ping";
     public static final String PROPERTIES = "properties";
 
@@ -59,25 +56,20 @@ public class InstanceTraffic extends Metrics {
 
     @Setter
     @Getter
-    @Column(name = SERVICE_ID)
-    @BanyanDB.SeriesID(index = 0)
+    @Column(columnName = SERVICE_ID)
     private String serviceId;
 
     @Setter
     @Getter
-    @Column(name = NAME, storageOnly = true)
-    @ElasticSearch.Column(legacyName = "name")
-    @BanyanDB.SeriesID(index = 1)
+    @Column(columnName = NAME, storageOnly = true)
     private String name;
-
     @Setter
     @Getter
-    @Column(name = LAST_PING_TIME_BUCKET)
+    @Column(columnName = LAST_PING_TIME_BUCKET)
     private long lastPingTimestamp;
-
     @Setter
     @Getter
-    @Column(name = PROPERTIES, storageOnly = true, length = 50000)
+    @Column(columnName = PROPERTIES, storageOnly = true, length = 50000)
     private JsonObject properties;
 
     @Override
@@ -85,10 +77,7 @@ public class InstanceTraffic extends Metrics {
         final InstanceTraffic instanceTraffic = (InstanceTraffic) metrics;
         this.lastPingTimestamp = instanceTraffic.getLastPingTimestamp();
         if (instanceTraffic.getProperties() != null && instanceTraffic.getProperties().size() > 0) {
-            if (this.properties == null) {
-                this.properties = new JsonObject();
-            }
-            instanceTraffic.getProperties().entrySet().forEach(it -> this.properties.add(it.getKey(), it.getValue()));
+            this.properties = instanceTraffic.getProperties();
         }
         /**
          * Keep the time bucket as the same time inserted.
@@ -132,40 +121,38 @@ public class InstanceTraffic extends Metrics {
     }
 
     @Override
-    protected StorageID id0() {
-        return new StorageID()
-            .appendMutant(new String[] {
-                SERVICE_ID,
-                NAME
-            }, IDManager.ServiceInstanceID.buildId(serviceId, name));
+    protected String id0() {
+        return IDManager.ServiceInstanceID.buildId(serviceId, name);
     }
 
-    public static class Builder implements StorageBuilder<InstanceTraffic> {
+    public static class Builder implements StorageHashMapBuilder<InstanceTraffic> {
         @Override
-        public InstanceTraffic storage2Entity(final Convert2Entity converter) {
+        public InstanceTraffic storage2Entity(final Map<String, Object> dbMap) {
             InstanceTraffic instanceTraffic = new InstanceTraffic();
-            instanceTraffic.setServiceId((String) converter.get(SERVICE_ID));
-            instanceTraffic.setName((String) converter.get(NAME));
-            final String propString = (String) converter.get(PROPERTIES);
+            instanceTraffic.setServiceId((String) dbMap.get(SERVICE_ID));
+            instanceTraffic.setName((String) dbMap.get(NAME));
+            final String propString = (String) dbMap.get(PROPERTIES);
             if (StringUtil.isNotEmpty(propString)) {
                 instanceTraffic.setProperties(GSON.fromJson(propString, JsonObject.class));
             }
-            instanceTraffic.setLastPingTimestamp(((Number) converter.get(LAST_PING_TIME_BUCKET)).longValue());
-            instanceTraffic.setTimeBucket(((Number) converter.get(TIME_BUCKET)).longValue());
+            instanceTraffic.setLastPingTimestamp(((Number) dbMap.get(LAST_PING_TIME_BUCKET)).longValue());
+            instanceTraffic.setTimeBucket(((Number) dbMap.get(TIME_BUCKET)).longValue());
             return instanceTraffic;
         }
 
         @Override
-        public void entity2Storage(final InstanceTraffic storageData, final Convert2Storage converter) {
-            converter.accept(SERVICE_ID, storageData.getServiceId());
-            converter.accept(NAME, storageData.getName());
+        public Map<String, Object> entity2Storage(final InstanceTraffic storageData) {
+            Map<String, Object> map = new HashMap<>();
+            map.put(SERVICE_ID, storageData.getServiceId());
+            map.put(NAME, storageData.getName());
             if (storageData.getProperties() != null) {
-                converter.accept(PROPERTIES, GSON.toJson(storageData.getProperties()));
+                map.put(PROPERTIES, GSON.toJson(storageData.getProperties()));
             } else {
-                converter.accept(PROPERTIES, Const.EMPTY_STRING);
+                map.put(PROPERTIES, Const.EMPTY_STRING);
             }
-            converter.accept(LAST_PING_TIME_BUCKET, storageData.getLastPingTimestamp());
-            converter.accept(TIME_BUCKET, storageData.getTimeBucket());
+            map.put(LAST_PING_TIME_BUCKET, storageData.getLastPingTimestamp());
+            map.put(TIME_BUCKET, storageData.getTimeBucket());
+            return map;
         }
     }
 
@@ -185,17 +172,6 @@ public class InstanceTraffic extends Metrics {
     }
 
     public static class PropertyUtil {
-        /**
-         * `namespace` and `pod` are key properties that help "on demand Pod logs"
-         * to locate the corresponding Pod in Kubernetes, when language agent is
-         * registering a new service instance that is supposed to work in terms of
-         * "on demand Pod logs", the agent should also fill in these 2 properties.
-         *
-         * @since 9.1.0
-         */
-        public static final String NAMESPACE = "namespace";
-        public static final String POD = "pod";
-
         public static final String LANGUAGE = "language";
         public static final String IPV4 = "ipv4";
         public static final String IPV4S = "ipv4s";

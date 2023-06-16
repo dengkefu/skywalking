@@ -30,7 +30,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.skywalking.library.elasticsearch.ElasticSearchVersion;
-import org.apache.skywalking.library.elasticsearch.exception.ResponseException;
 import org.apache.skywalking.library.elasticsearch.response.Index;
 import org.apache.skywalking.library.elasticsearch.response.Mappings;
 
@@ -109,7 +108,7 @@ public final class IndexClient {
                     if (response.status() == HttpStatus.OK) {
                         return true;
                     }
-                    throw new ResponseException(response.contentUtf8(), response.status().code());
+                    throw new RuntimeException(response.contentUtf8());
                 }));
         future.whenComplete((result, exception) -> {
             if (exception != null) {

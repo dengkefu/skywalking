@@ -27,11 +27,9 @@ nodes:
 calls:
 {{- contains .calls }}
 - source: {{ b64enc "e2e-service-consumer" }}.1
-  sourcecomponents:
-    - SpringRestTemplate
+  sourcecomponents: []
   target: {{ b64enc "provider" }}.1
-  targetcomponents:
-    - Express
+  targetcomponents: []
   id: {{ b64enc "e2e-service-consumer" }}.1-{{ b64enc "provider" }}.1
   detectpoints:
     - CLIENT

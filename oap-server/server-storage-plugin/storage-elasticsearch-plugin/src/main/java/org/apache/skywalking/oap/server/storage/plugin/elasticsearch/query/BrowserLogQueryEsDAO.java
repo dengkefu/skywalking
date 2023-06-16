@@ -18,7 +18,6 @@
 package org.apache.skywalking.oap.server.storage.plugin.elasticsearch.query;
 
 import java.io.IOException;
-import org.apache.skywalking.oap.server.core.query.input.Duration;
 import org.apache.skywalking.oap.server.library.util.StringUtil;
 import org.apache.skywalking.library.elasticsearch.requests.search.BoolQueryBuilder;
 import org.apache.skywalking.library.elasticsearch.requests.search.Query;
@@ -48,18 +47,11 @@ public class BrowserLogQueryEsDAO extends EsDAO implements IBrowserLogQueryDAO {
                                                   final String serviceVersionId,
                                                   final String pagePathId,
                                                   final BrowserErrorCategory category,
-                                                  final Duration duration,
+                                                  final long startSecondTB,
+                                                  final long endSecondTB,
                                                   final int limit,
                                                   final int from) throws IOException {
-        long startSecondTB = 0, endSecondTB = 0;
-        if (nonNull(duration)) {
-            startSecondTB = duration.getStartTimeBucketInSec();
-            endSecondTB = duration.getEndTimeBucketInSec();
-        }
         final BoolQueryBuilder boolQueryBuilder = Query.bool();
-        if (IndexController.LogicIndicesRegister.isMergedTable(BrowserErrorLogRecord.INDEX_NAME)) {
-            boolQueryBuilder.must(Query.term(IndexController.LogicIndicesRegister.RECORD_TABLE_NAME, BrowserErrorLogRecord.INDEX_NAME));
-        }
 
         if (startSecondTB != 0 && endSecondTB != 0) {
             boolQueryBuilder.must(
@@ -95,6 +87,7 @@ public class BrowserLogQueryEsDAO extends EsDAO implements IBrowserLogQueryDAO {
             );
 
         BrowserErrorLogs logs = new BrowserErrorLogs();
+        logs.setTotal(response.getHits().getTotal());
 
         for (SearchHit searchHit : response.getHits().getHits()) {
             final String dataBinaryBase64 =

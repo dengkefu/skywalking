@@ -21,28 +21,28 @@ package org.apache.skywalking.oap.server.core.alarm.provider;
 import static java.util.Objects.requireNonNull;
 
 public enum OP {
-    GT {
+    GREATER {
         @Override
         public boolean test(final Number expected, final Number actual) {
             return requireNonNull(actual, "actual").doubleValue() > requireNonNull(expected, "expected").doubleValue();
         }
     },
 
-    GTE {
+    GREATER_EQ {
         @Override
         public boolean test(final Number expected, final Number actual) {
             return requireNonNull(actual, "actual").doubleValue() >= requireNonNull(expected, "expected").doubleValue();
         }
     },
 
-    LT {
+    LESS {
         @Override
         public boolean test(final Number expected, final Number actual) {
             return requireNonNull(actual, "actual").doubleValue() < requireNonNull(expected, "expected").doubleValue();
         }
     },
 
-    LTE {
+    LESS_EQ {
         @Override
         public boolean test(final Number expected, final Number actual) {
             return requireNonNull(actual, "actual").doubleValue() <= requireNonNull(expected, "expected").doubleValue();
@@ -51,34 +51,25 @@ public enum OP {
 
     // NOTICE: double equal is not reliable in Java,
     // match result is not predictable
-    EQ {
+    EQUAL {
         @Override
         public boolean test(final Number expected, final Number actual) {
             return requireNonNull(actual, "actual").doubleValue() == requireNonNull(expected, "expected").doubleValue();
-        }
-    },
-
-    NEQ {
-        @Override
-        public boolean test(final Number expected, final Number actual) {
-            return requireNonNull(actual, "actual").doubleValue() != requireNonNull(expected, "expected").doubleValue();
         }
     };
 
     public static OP get(String op) {
         switch (op) {
             case ">":
-                return GT;
+                return GREATER;
             case ">=":
-                return GTE;
+                return GREATER_EQ;
             case "<":
-                return LT;
+                return LESS;
             case "<=":
-                return LTE;
+                return LESS_EQ;
             case "==":
-                return EQ;
-            case "!=":
-                return NEQ;
+                return EQUAL;
             default:
                 throw new IllegalArgumentException("unknown op, " + op);
         }

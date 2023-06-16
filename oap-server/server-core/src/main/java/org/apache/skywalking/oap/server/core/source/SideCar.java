@@ -32,11 +32,4 @@ public class SideCar {
     @Setter
     @Getter
     private String internalErrorCode = "";
-
-    @Setter
-    @Getter
-    private long internalRequestLatencyNanos;
-    @Setter
-    @Getter
-    private long internalResponseLatencyNanos;
 }

@@ -28,8 +28,7 @@ import io.grpc.stub.StreamObserver;
 import org.apache.skywalking.apm.network.common.v3.Commands;
 import org.apache.skywalking.apm.network.language.agent.v3.SegmentObject;
 import org.apache.skywalking.apm.network.language.agent.v3.TraceSegmentReportServiceGrpc;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import org.junit.Assert;
 
 public class GRPCNoServerTest {
     public static void main(String[] args) throws InterruptedException {
@@ -62,6 +61,6 @@ public class GRPCNoServerTest {
 
         Thread.sleep(2 * 1000);
 
-        assertThat(status[0].getCode()).isEqualTo(Status.UNAVAILABLE.getCode());
+        Assert.assertEquals(status[0].getCode(), Status.UNAVAILABLE.getCode());
     }
 }

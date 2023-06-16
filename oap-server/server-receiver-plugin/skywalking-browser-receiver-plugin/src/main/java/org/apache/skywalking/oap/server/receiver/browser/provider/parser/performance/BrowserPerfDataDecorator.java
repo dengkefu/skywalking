@@ -17,96 +17,98 @@
 
 package org.apache.skywalking.oap.server.receiver.browser.provider.parser.performance;
 
+import lombok.RequiredArgsConstructor;
 import org.apache.skywalking.apm.network.language.agent.v3.BrowserPerfData;
 
+@RequiredArgsConstructor
 public class BrowserPerfDataDecorator {
+    private boolean isOrigin = true;
+    private final BrowserPerfData browserPerfData;
     private BrowserPerfData.Builder builder;
 
-    public BrowserPerfDataDecorator(final BrowserPerfData browserPerfData) {
-        this.builder = browserPerfData.toBuilder();
-    }
-
     public String getService() {
-        return builder.getService();
+        return isOrigin ? browserPerfData.getService() : builder.getService();
     }
 
     public String getServiceVersion() {
-        return builder.getServiceVersion();
+        return isOrigin ? browserPerfData.getServiceVersion() : builder.getServiceVersion();
     }
 
     public long getTime() {
-        return builder.getTime();
+        return isOrigin ? browserPerfData.getTime() : builder.getTime();
     }
 
     public String getPagePath() {
-        return builder.getPagePath();
+        return isOrigin ? browserPerfData.getPagePath() : builder.getPagePath();
     }
 
     public int getRedirectTime() {
-        return builder.getRedirectTime();
+        return isOrigin ? browserPerfData.getRedirectTime() : builder.getRedirectTime();
     }
 
     public int getDnsTime() {
-        return builder.getDnsTime();
+        return isOrigin ? browserPerfData.getDnsTime() : builder.getDnsTime();
     }
 
     public int getTtfbTime() {
-        return builder.getTtfbTime();
+        return isOrigin ? browserPerfData.getTtfbTime() : builder.getTtfbTime();
     }
 
     public int getTcpTime() {
-        return builder.getTcpTime();
+        return isOrigin ? browserPerfData.getTcpTime() : builder.getTcpTime();
     }
 
     public int getTransTime() {
-        return builder.getTransTime();
+        return isOrigin ? browserPerfData.getTransTime() : builder.getTransTime();
     }
 
     public int getDomAnalysisTime() {
-        return builder.getDomAnalysisTime();
+        return isOrigin ? browserPerfData.getDomAnalysisTime() : builder.getDomAnalysisTime();
     }
 
     public int getFptTime() {
-        return builder.getFptTime();
+        return isOrigin ? browserPerfData.getFptTime() : builder.getFptTime();
     }
 
     public int getDomReadyTime() {
-        return builder.getDomReadyTime();
+        return isOrigin ? browserPerfData.getDomReadyTime() : builder.getDomReadyTime();
     }
 
     public int getLoadPageTime() {
-        return builder.getLoadPageTime();
+        return isOrigin ? browserPerfData.getLoadPageTime() : builder.getLoadPageTime();
     }
 
     public int getResTime() {
-        return builder.getResTime();
+        return isOrigin ? browserPerfData.getResTime() : builder.getResTime();
     }
 
     public int getSslTime() {
-        return builder.getSslTime();
+        return isOrigin ? browserPerfData.getSslTime() : builder.getSslTime();
     }
 
     public int getTtlTime() {
-        return builder.getTtlTime();
+        return isOrigin ? browserPerfData.getTtlTime() : builder.getTtlTime();
     }
 
     public int getFirstPackTime() {
-        return builder.getFirstPackTime();
+        return isOrigin ? browserPerfData.getFirstPackTime() : builder.getFirstPackTime();
     }
 
     public int getFmpTime() {
-        return builder.getFmpTime();
+        return isOrigin ? browserPerfData.getFmpTime() : builder.getFmpTime();
     }
 
     public void setTime(long time) {
+        if (isOrigin) {
+            toBuilder();
+        }
         builder.setTime(time);
     }
 
-    public void setServiceVersion(String version) {
-        builder.setServiceVersion(version);
-    }
-
-    public void setPagePath(String pagePath) {
-        builder.setPagePath(pagePath);
+    void toBuilder() {
+        if (isOrigin) {
+            this.isOrigin = false;
+            this.builder = browserPerfData.toBuilder();
+        }
     }
 }

@@ -20,8 +20,10 @@ package org.apache.skywalking.oap.server.tool.profile.exporter;
 
 import com.google.common.primitives.Ints;
 import org.apache.skywalking.apm.network.language.profile.v3.ThreadSnapshot;
-import org.apache.skywalking.oap.server.core.profiling.trace.ProfileThreadSnapshotRecord;
-import org.apache.skywalking.oap.server.core.storage.profiling.trace.IProfileThreadSnapshotQueryDAO;
+import org.apache.skywalking.oap.server.core.analysis.manual.segment.SegmentRecord;
+import org.apache.skywalking.oap.server.core.profile.ProfileThreadSnapshotRecord;
+import org.apache.skywalking.oap.server.core.query.type.BasicTrace;
+import org.apache.skywalking.oap.server.core.storage.profile.IProfileThreadSnapshotQueryDAO;
 
 import java.io.IOException;
 import java.util.Comparator;
@@ -37,7 +39,7 @@ public class ProfileAnalyzeSnapshotDAO implements IProfileThreadSnapshotQueryDAO
     }
 
     @Override
-    public List<String> queryProfiledSegmentIdList(String taskId) throws IOException {
+    public List<BasicTrace> queryProfiledSegments(String taskId) throws IOException {
         return null;
     }
 
@@ -57,6 +59,11 @@ public class ProfileAnalyzeSnapshotDAO implements IProfileThreadSnapshotQueryDAO
                 .filter(s -> s.getSequence() >= minSequence && s.getSequence() < maxSequence)
                 .map(this::buildFromSnapshot)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public SegmentRecord getProfiledSegment(String segmentId) throws IOException {
+        return null;
     }
 
     private ProfileThreadSnapshotRecord buildFromSnapshot(ThreadSnapshot snapshot) {

@@ -23,9 +23,7 @@ import java.io.Reader;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import org.apache.skywalking.oap.server.core.config.group.uri.quickmatch.QuickUriGroupingRule;
 import org.apache.skywalking.oap.server.library.util.StringUtil;
-import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
@@ -36,20 +34,20 @@ public class EndpointGroupingRuleReader {
     private Map yamlData;
 
     public EndpointGroupingRuleReader(InputStream inputStream) {
-        Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
+        Yaml yaml = new Yaml(new SafeConstructor());
         yamlData = (Map) yaml.load(inputStream);
     }
 
     public EndpointGroupingRuleReader(Reader io) {
-        Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
+        Yaml yaml = new Yaml(new SafeConstructor());
         yamlData = (Map) yaml.load(io);
     }
 
     /**
      * @return the loaded rules.
      */
-    QuickUriGroupingRule read() {
-        QuickUriGroupingRule quickUriGroupingRule = new QuickUriGroupingRule();
+    EndpointGroupingRule read() {
+        EndpointGroupingRule endpointGroupingRule = new EndpointGroupingRule();
 
         if (Objects.nonNull(yamlData)) {
             List rulesData = (List) yamlData.get("grouping");
@@ -63,17 +61,19 @@ public class EndpointGroupingRuleReader {
                     final List endpointRules = (List) rule.get("rules");
                     if (endpointRules != null) {
                         endpointRules.forEach(endpointRuleObj -> {
-                            final String pattern = (String) endpointRuleObj;
-                            if (StringUtil.isEmpty(pattern)) {
+                            final Map endpointRule = (Map) endpointRuleObj;
+                            final String endpointLogicGroupName = (String) endpointRule.get("endpoint-name");
+                            final String groupRegex = (String) endpointRule.get("regex");
+                            if (StringUtil.isEmpty(endpointLogicGroupName) || StringUtil.isEmpty(groupRegex)) {
                                 return;
                             }
-                            quickUriGroupingRule.addRule(serviceName, pattern);
+                            endpointGroupingRule.addRule(serviceName, endpointLogicGroupName, groupRegex);
                         });
                     }
                 });
             }
         }
 
-        return quickUriGroupingRule;
+        return endpointGroupingRule;
     }
 }

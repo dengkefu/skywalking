@@ -29,10 +29,6 @@ public class ServiceInstanceNode {
     private String name;
     private String serviceId;
     private String serviceName;
-    /**
-     * @since 9.4.0 No type for service instance topology.
-     */
-    @Deprecated
     private String type = "";
     private boolean isReal;
 }

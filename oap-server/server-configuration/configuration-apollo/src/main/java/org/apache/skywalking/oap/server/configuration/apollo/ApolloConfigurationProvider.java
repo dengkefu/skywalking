@@ -21,13 +21,18 @@ package org.apache.skywalking.oap.server.configuration.apollo;
 import com.google.common.base.Strings;
 import org.apache.skywalking.oap.server.configuration.api.AbstractConfigurationProvider;
 import org.apache.skywalking.oap.server.configuration.api.ConfigWatcherRegister;
+import org.apache.skywalking.oap.server.library.module.ModuleConfig;
 import org.apache.skywalking.oap.server.library.module.ModuleStartException;
 
 /**
  * Get configuration from Apollo configuration center.
  */
 public class ApolloConfigurationProvider extends AbstractConfigurationProvider {
-    private ApolloConfigurationCenterSettings settings;
+    private final ApolloConfigurationCenterSettings settings;
+
+    public ApolloConfigurationProvider() {
+        settings = new ApolloConfigurationCenterSettings();
+    }
 
     @Override
     public String name() {
@@ -35,18 +40,8 @@ public class ApolloConfigurationProvider extends AbstractConfigurationProvider {
     }
 
     @Override
-    public ConfigCreator newConfigCreator() {
-        return new ConfigCreator<ApolloConfigurationCenterSettings>() {
-            @Override
-            public Class type() {
-                return ApolloConfigurationCenterSettings.class;
-            }
-
-            @Override
-            public void onInitialized(final ApolloConfigurationCenterSettings initialized) {
-                settings = initialized;
-            }
-        };
+    public ModuleConfig createConfigBeanIfAbsent() {
+        return settings;
     }
 
     @Override

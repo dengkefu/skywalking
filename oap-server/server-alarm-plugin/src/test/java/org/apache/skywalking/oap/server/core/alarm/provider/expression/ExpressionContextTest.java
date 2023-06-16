@@ -18,12 +18,13 @@
 
 package org.apache.skywalking.oap.server.core.alarm.provider.expression;
 
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
 
 public class ExpressionContextTest {
 
@@ -38,7 +39,7 @@ public class ExpressionContextTest {
         });
         Expression expression = new Expression(expressionContext);
         Number number = (Number) expression.eval("sqrt(16)");
-        assertThat(number).isEqualTo(4.0);
+        assertThat(number, is(4.0));
     }
 
     @Test
@@ -47,8 +48,8 @@ public class ExpressionContextTest {
         expressionContext.registerFunc(Math.class);
         Expression expression = new Expression(expressionContext);
         Number number = (Number) expression.eval("sqrt(16)");
-        assertThat(number).isEqualTo(4.0);
+        assertThat(number, is(4.0));
         number = (Number) expression.eval("abs(-12)");
-        assertThat(number).isEqualTo(12);
+        assertThat(number, is(12));
     }
 }

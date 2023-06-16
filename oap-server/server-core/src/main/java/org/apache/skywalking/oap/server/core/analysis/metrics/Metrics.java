@@ -24,7 +24,6 @@ import lombok.Setter;
 import org.apache.skywalking.oap.server.core.analysis.TimeBucket;
 import org.apache.skywalking.oap.server.core.remote.data.StreamData;
 import org.apache.skywalking.oap.server.core.storage.StorageData;
-import org.apache.skywalking.oap.server.core.storage.StorageID;
 import org.apache.skywalking.oap.server.core.storage.annotation.Column;
 
 /**
@@ -34,21 +33,21 @@ import org.apache.skywalking.oap.server.core.storage.annotation.Column;
 @EqualsAndHashCode(of = {
     "timeBucket"
 })
-public abstract class Metrics extends StreamData implements StorageData {
+public abstract class Metrics extends StreamData implements StorageData, HavingDefaultValue {
+
+    public static final String TIME_BUCKET = "time_bucket";
     public static final String ENTITY_ID = "entity_id";
-    public static final String ID = "id";
 
     /**
      * Time attribute
      */
     @Getter
     @Setter
-    @Column(name = TIME_BUCKET)
+    @Column(columnName = TIME_BUCKET)
     private long timeBucket;
 
     /**
-     * The last update timestamp of the cache.
-     * The `update` means it is combined with the new metrics. This update doesn't mean the database level update ultimately.
+     * Time in the cache, only work when MetricsPersistentWorker#enableDatabaseSession == true.
      */
     @Getter
     private long lastUpdateTimestamp = 0L;
@@ -143,15 +142,15 @@ public abstract class Metrics extends StreamData implements StorageData {
         return TimeBucket.isDayBucket(timeBucket);
     }
 
-    private volatile StorageID id;
+    private volatile String id;
 
     @Override
-    public StorageID id() {
+    public String id() {
         if (id == null) {
             id = id0();
         }
         return id;
     }
 
-    protected abstract StorageID id0();
+    protected abstract String id0();
 }

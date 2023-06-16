@@ -28,12 +28,11 @@ public class DatabaseStatementDispatcher implements SourceDispatcher<DatabaseSlo
     public void dispatch(DatabaseSlowStatement source) {
         TopNDatabaseStatement statement = new TopNDatabaseStatement();
         statement.setId(source.getId());
-        statement.setEntityId(source.getDatabaseServiceId());
+        statement.setServiceId(source.getDatabaseServiceId());
         statement.setLatency(source.getLatency());
         statement.setStatement(source.getStatement());
         statement.setTimeBucket(source.getTimeBucket());
         statement.setTraceId(source.getTraceId());
-        statement.setTimestamp(source.getTimestamp());
 
         TopNStreamProcessor.getInstance().in(statement);
     }

@@ -22,12 +22,10 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 import org.apache.skywalking.oap.server.core.analysis.manual.searchtag.Tag;
 
 import static org.apache.skywalking.oap.server.core.source.DefaultScopeDefine.SEGMENT;
 
-@ToString
 @ScopeDeclaration(id = SEGMENT, name = "Segment")
 public class Segment extends Source {
 

@@ -19,19 +19,24 @@
 package org.apache.skywalking.oap.server.receiver.envoy.als.k8s;
 
 import com.google.common.collect.ImmutableMap;
-import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.Service;
-import lombok.RequiredArgsConstructor;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
-
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1Service;
 import java.util.Map;
+import lombok.RequiredArgsConstructor;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import static com.google.common.collect.ImmutableSortedMap.of;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static junit.framework.TestCase.assertEquals;
 
+@RequiredArgsConstructor
+@RunWith(Parameterized.class)
 public class ServiceNameFormatterTest {
+    private final Case kase;
+
+    @Parameterized.Parameters
     public static Case[] parameters() {
         return new Case[] {
             new Case(
@@ -67,17 +72,16 @@ public class ServiceNameFormatterTest {
         };
     }
 
-    @ParameterizedTest
-    @MethodSource("parameters")
-    public void testFormatDefaultRule(final Case kase) throws Exception {
+    @Test
+    public void testFormatDefaultRule() throws Exception {
         assertEquals(new ServiceNameFormatter(kase.format).format(kase.context), kase.result);
     }
 
-    static Service service(final String name) {
-        return new Service() {
+    static V1Service service(final String name) {
+        return new V1Service() {
             @Override
-            public ObjectMeta getMetadata() {
-                return new ObjectMeta() {
+            public V1ObjectMeta getMetadata() {
+                return new V1ObjectMeta() {
                     @Override
                     public String getName() {
                         return name;
@@ -87,11 +91,11 @@ public class ServiceNameFormatterTest {
         };
     }
 
-    static Pod pod(ImmutableMap<String, String> lb) {
-        return new Pod() {
+    static V1Pod pod(ImmutableMap<String, String> lb) {
+        return new V1Pod() {
             @Override
-            public ObjectMeta getMetadata() {
-                return new ObjectMeta() {
+            public V1ObjectMeta getMetadata() {
+                return new V1ObjectMeta() {
                     @Override
                     public Map<String, String> getLabels() {
                         return lb;

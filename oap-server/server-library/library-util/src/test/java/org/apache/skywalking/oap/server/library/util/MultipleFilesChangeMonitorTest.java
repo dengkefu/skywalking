@@ -18,39 +18,45 @@
 
 package org.apache.skywalking.oap.server.library.util;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.util.List;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class MultipleFilesChangeMonitorTest {
-    private static final String FILE_NAME = "FileChangeMonitorTest.tmp";
+    private static String FILE_NAME = "FileChangeMonitorTest.tmp";
 
     @Test
     public void test() throws InterruptedException, IOException {
         StringBuilder content = new StringBuilder();
         MultipleFilesChangeMonitor monitor = new MultipleFilesChangeMonitor(
-            1, readableContents -> {
-                assertEquals(2, readableContents.size());
-                assertNull(readableContents.get(1));
-            content.delete(0, content.length());
-            content.append(new String(readableContents.get(0), 0, readableContents.get(0).length, StandardCharsets.UTF_8));
+            1, new MultipleFilesChangeMonitor.FilesChangedNotifier() {
+
+            @Override
+            public void filesChanged(final List<byte[]> readableContents) {
+                Assert.assertEquals(2, readableContents.size());
+                Assert.assertNull(readableContents.get(1));
+                try {
+                    content.delete(0, content.length());
+                    content.append(new String(readableContents.get(0), 0, readableContents.get(0).length, "UTF-8"));
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
+            }
         }, FILE_NAME, "XXXX_NOT_EXIST.SW");
 
         monitor.start();
 
         File file = new File(FILE_NAME);
-        BufferedOutputStream bos = new BufferedOutputStream(Files.newOutputStream(file.toPath()));
-        bos.write("test context".getBytes(StandardCharsets.UTF_8));
+        BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(file));
+        bos.write("test context".getBytes(Charset.forName("UTF-8")));
         bos.flush();
         bos.close();
 
@@ -60,8 +66,8 @@ public class MultipleFilesChangeMonitorTest {
         while (countDown-- > 0) {
             if ("test context".equals(content.toString())) {
                 file = new File(FILE_NAME);
-                bos = new BufferedOutputStream(Files.newOutputStream(file.toPath()));
-                bos.write("test context again".getBytes(StandardCharsets.UTF_8));
+                bos = new BufferedOutputStream(new FileOutputStream(file));
+                bos.write("test context again".getBytes(Charset.forName("UTF-8")));
                 bos.flush();
                 bos.close();
                 notified = true;
@@ -71,12 +77,12 @@ public class MultipleFilesChangeMonitorTest {
             }
             Thread.sleep(500);
         }
-        Assertions.assertTrue(notified);
-        Assertions.assertTrue(notified2);
+        Assert.assertTrue(notified);
+        Assert.assertTrue(notified2);
     }
 
-    @BeforeAll
-    @AfterAll
+    @BeforeClass
+    @AfterClass
     public static void cleanup() {
         File file = new File(FILE_NAME);
         if (file.exists() && file.isFile()) {

@@ -31,18 +31,15 @@ nodes:
 calls:
 {{- contains .calls }}
 - source: {{ b64enc "php" }}.1
-  sourcecomponents:
-    - cURL
+  sourcecomponents: []
   target: {{ b64enc "e2e-service-provider" }}.1
-  targetcomponents:
-    - Tomcat
+  targetcomponents: []
   id: {{ b64enc "php" }}.1-{{ b64enc "e2e-service-provider" }}.1
   detectpoints:
     - CLIENT
     - SERVER
 - source: {{ b64enc "e2e-service-provider" }}.1
-  sourcecomponents:
-    - h2-jdbc-driver
+  sourcecomponents: []
   target: {{ b64enc "localhost:-1"}}.0
   targetcomponents: []
   id: {{ b64enc "e2e-service-provider" }}.1-{{ b64enc "localhost:-1"}}.0

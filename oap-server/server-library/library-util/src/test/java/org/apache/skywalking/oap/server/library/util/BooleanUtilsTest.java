@@ -17,12 +17,11 @@
 
 package org.apache.skywalking.oap.server.library.util;
 
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class BooleanUtilsTest {
 
@@ -38,8 +37,8 @@ public class BooleanUtilsTest {
         assertFalse(BooleanUtils.valueToBoolean(0));
     }
 
-    @Test
+    @Test(expected = RuntimeException.class)
     public void shouldThrowIfValueIsNotZeroOrOne() {
-        assertThrows(RuntimeException.class, () -> BooleanUtils.valueToBoolean(123));
+        boolean ignored = BooleanUtils.valueToBoolean(123);
     }
 }

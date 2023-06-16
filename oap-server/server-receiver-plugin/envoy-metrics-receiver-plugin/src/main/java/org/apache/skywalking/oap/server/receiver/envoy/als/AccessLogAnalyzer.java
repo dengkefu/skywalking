@@ -18,14 +18,15 @@
 
 package org.apache.skywalking.oap.server.receiver.envoy.als;
 
-import org.apache.skywalking.apm.network.servicemesh.v3.ServiceMeshMetrics;
+import io.envoyproxy.envoy.config.core.v3.Node;
+import io.envoyproxy.envoy.service.accesslog.v3.StreamAccessLogsMessage;
+import java.util.List;
+import lombok.Builder;
+import lombok.Data;
+import org.apache.skywalking.apm.network.servicemesh.v3.ServiceMeshMetric;
 import org.apache.skywalking.oap.server.library.module.ModuleManager;
 import org.apache.skywalking.oap.server.library.module.ModuleStartException;
 import org.apache.skywalking.oap.server.receiver.envoy.EnvoyMetricReceiverConfig;
-import io.envoyproxy.envoy.config.core.v3.Node;
-import io.envoyproxy.envoy.service.accesslog.v3.StreamAccessLogsMessage;
-import lombok.Builder;
-import lombok.Data;
 
 public interface AccessLogAnalyzer<E> {
     String name();
@@ -69,7 +70,7 @@ public interface AccessLogAnalyzer<E> {
 
     @Data
     @Builder
-    static class Result {
+    class Result {
         /**
          * The service representing the Envoy node.
          */
@@ -78,10 +79,6 @@ public interface AccessLogAnalyzer<E> {
         /**
          * The analyzed metrics result.
          */
-        private ServiceMeshMetrics.Builder metrics;
-
-        public boolean hasResult() {
-            return metrics != null && (metrics.getHttpMetrics().getMetricsCount() > 0 || metrics.getTcpMetrics().getMetricsCount() > 0);
-        }
+        private List<ServiceMeshMetric.Builder> metrics;
     }
 }

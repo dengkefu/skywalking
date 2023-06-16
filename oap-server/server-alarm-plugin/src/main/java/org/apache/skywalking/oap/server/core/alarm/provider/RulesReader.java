@@ -27,9 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
-import org.apache.skywalking.oap.server.core.alarm.provider.discord.DiscordSettings;
-import org.apache.skywalking.oap.server.core.alarm.provider.pagerduty.PagerDutySettings;
 import org.apache.skywalking.oap.server.library.util.StringUtil;
 import org.apache.skywalking.oap.server.core.alarm.provider.dingtalk.DingtalkSettings;
 import org.apache.skywalking.oap.server.core.alarm.provider.feishu.FeishuSettings;
@@ -38,7 +35,6 @@ import org.apache.skywalking.oap.server.core.alarm.provider.slack.SlackSettings;
 import org.apache.skywalking.oap.server.core.alarm.provider.wechat.WechatSettings;
 import org.apache.skywalking.oap.server.core.alarm.provider.welink.WeLinkSettings;
 import org.apache.skywalking.oap.server.library.util.CollectionUtils;
-import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
@@ -49,13 +45,13 @@ public class RulesReader {
     private Map yamlData;
 
     public RulesReader(InputStream inputStream) {
-        Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
-        yamlData = yaml.load(inputStream);
+        Yaml yaml = new Yaml(new SafeConstructor());
+        yamlData = (Map) yaml.load(inputStream);
     }
 
     public RulesReader(Reader io) {
-        Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
-        yamlData = yaml.load(io);
+        Yaml yaml = new Yaml(new SafeConstructor());
+        yamlData = (Map) yaml.load(io);
     }
 
     /**
@@ -74,8 +70,6 @@ public class RulesReader {
             readDingtalkConfig(rules);
             readFeishuConfig(rules);
             readWeLinkConfig(rules);
-            readPagerDutyConfig(rules);
-            readDiscordConfig(rules);
         }
         return rules;
     }
@@ -286,48 +280,5 @@ public class RulesReader {
         welinkSettings.setTextTemplate(textTemplate);
         welinkSettings.setWebhooks(webHookUrls);
         rules.setWelinks(welinkSettings);
-    }
-
-    /**
-     * Read PagerDuty hook config into {@link PagerDutySettings}
-     */
-    private void readPagerDutyConfig(Rules rules) {
-        Map<String, Object> pagerDutyConfig = (Map<String, Object>) yamlData.get("pagerDutyHooks");
-        if (pagerDutyConfig != null) {
-            PagerDutySettings pagerDutySettings = new PagerDutySettings();
-            String textTemplate = (String) pagerDutyConfig.getOrDefault("textTemplate", "");
-            pagerDutySettings.setTextTemplate(textTemplate);
-
-            List<String> integrationKeys = (List<String>) pagerDutyConfig.get("integrationKeys");
-            if (integrationKeys != null) {
-                pagerDutySettings.getIntegrationKeys().addAll(integrationKeys);
-            }
-
-            rules.setPagerDutySettings(pagerDutySettings);
-        }
-    }
-
-    /**
-     * Read Discord hook config into {@link DiscordSettings}
-     */
-    @SuppressWarnings("unchecked")
-    private void readDiscordConfig(Rules rules) {
-        Map<String, Object> discordConfig = (Map<String, Object>) yamlData.getOrDefault(
-                "discordHooks",
-                Collections.EMPTY_MAP
-        );
-        String textTemplate = (String) discordConfig.get("textTemplate");
-        List<Map<String, String>> discordWebHooks = (List<Map<String, String>>) discordConfig.get("webhooks");
-        if (StringUtil.isBlank(textTemplate) || CollectionUtils.isEmpty(discordWebHooks)) {
-            return;
-        }
-        List<DiscordSettings.WebHookUrl> webHookUrls = discordWebHooks.stream().map(
-                DiscordSettings.WebHookUrl::generateFromMap
-        ).collect(Collectors.toList());
-
-        DiscordSettings discordSettings = new DiscordSettings();
-        discordSettings.setTextTemplate(textTemplate);
-        discordSettings.setWebhooks(webHookUrls);
-        rules.setDiscordSettings(discordSettings);
     }
 }

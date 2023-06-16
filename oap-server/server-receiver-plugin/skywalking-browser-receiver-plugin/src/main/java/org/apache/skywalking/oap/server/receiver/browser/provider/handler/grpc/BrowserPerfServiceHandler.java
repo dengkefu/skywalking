@@ -131,6 +131,7 @@ public class BrowserPerfServiceHandler extends BrowserPerfServiceGrpc.BrowserPer
             @Override
             public void onError(final Throwable throwable) {
                 log.error(throwable.getMessage(), throwable);
+                responseObserver.onCompleted();
             }
 
             @Override

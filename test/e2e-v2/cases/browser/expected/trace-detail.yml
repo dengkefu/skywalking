@@ -36,7 +36,6 @@ spans:
       - key: url
         value: http://provider:9091/info
     logs: []
-    attachedevents: []
   - traceid: {{ notEmpty .traceid }}
     segmentid: {{ notEmpty .segmentid }}
     spanid: 0
@@ -66,5 +65,4 @@ spans:
       - key: http.status.code
         value: "200"
     logs: []
-    attachedevents: []
 {{- end }}

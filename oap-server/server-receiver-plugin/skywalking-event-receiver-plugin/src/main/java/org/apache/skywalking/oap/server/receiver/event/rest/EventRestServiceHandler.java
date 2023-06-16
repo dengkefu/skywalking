@@ -17,17 +17,20 @@
 
 package org.apache.skywalking.oap.server.receiver.event.rest;
 
-import com.linecorp.armeria.server.annotation.Post;
-
+import com.google.common.collect.Lists;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import java.util.List;
-
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.skywalking.apm.network.common.v3.Commands;
 import org.apache.skywalking.apm.network.event.v3.Event;
 import org.apache.skywalking.oap.server.analyzer.event.EventAnalyzerModule;
 import org.apache.skywalking.oap.server.analyzer.event.EventAnalyzerService;
-import org.apache.skywalking.oap.server.core.analysis.Layer;
 import org.apache.skywalking.oap.server.library.module.ModuleManager;
+import org.apache.skywalking.oap.server.library.server.jetty.JettyHandler;
+import org.apache.skywalking.oap.server.library.util.ProtoBufJsonUtils;
 import org.apache.skywalking.oap.server.telemetry.TelemetryModule;
 import org.apache.skywalking.oap.server.telemetry.api.CounterMetrics;
 import org.apache.skywalking.oap.server.telemetry.api.HistogramMetrics;
@@ -35,12 +38,14 @@ import org.apache.skywalking.oap.server.telemetry.api.MetricsCreator;
 import org.apache.skywalking.oap.server.telemetry.api.MetricsTag;
 
 @Slf4j
-public class EventRestServiceHandler {
+public class EventRestServiceHandler extends JettyHandler {
     private final HistogramMetrics histogram;
 
     private final CounterMetrics errorCounter;
 
     private final EventAnalyzerService eventAnalyzerService;
+
+    private final Gson gson = new Gson();
 
     public EventRestServiceHandler(final ModuleManager manager) {
         final MetricsCreator metricsCreator = manager.find(TelemetryModule.NAME)
@@ -61,22 +66,26 @@ public class EventRestServiceHandler {
         );
     }
 
-    @Post("/v3/events")
-    public Commands collectEvents(final List<Event> events) {
+    @Override
+    protected void doPost(final HttpServletRequest req, final HttpServletResponse resp) {
         try (HistogramMetrics.Timer ignored = histogram.createTimer()) {
-            events.forEach(e -> {
-                // Check event's layer
-                if (e.getLayer().isEmpty()) {
-                    throw new IllegalArgumentException("layer field is required since v9.0.0, please upgrade your event report tools");
-                }
-                Layer.nameOf(e.getLayer());
+            List<Event> events = Lists.newArrayList();
+            JsonArray array = gson.fromJson(req.getReader(), JsonArray.class);
+            for (JsonElement element : array) {
+                Event.Builder builder = Event.newBuilder();
+                ProtoBufJsonUtils.fromJSON(element.toString(), builder);
+                events.add(builder.build());
+            }
 
-                eventAnalyzerService.analyze(e);
-            });
-            return Commands.newBuilder().build();
+            events.forEach(eventAnalyzerService::analyze);
         } catch (Exception e) {
             errorCounter.inc();
-            throw e;
+            log.error(e.getMessage(), e);
         }
+    }
+
+    @Override
+    public String pathSpec() {
+        return "/v3/events";
     }
 }

@@ -18,29 +18,29 @@
 package org.apache.skywalking.oap.server.core.analysis.metrics.expression;
 
 import org.apache.skywalking.oap.server.core.source.RequestType;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class InMatchTest {
 
     @Test
     public void testIn() {
-        Assertions.assertTrue(new InMatch().match("a", new Object[] {
+        Assert.assertTrue(new InMatch().match("a", new Object[] {
             "\"a\"",
             "\"b\""
         }));
-        Assertions.assertFalse(new InMatch().match("c", new Object[] {
+        Assert.assertFalse(new InMatch().match("c", new Object[] {
             "\"a\"",
             "\"b\""
         }));
 
-        Assertions.assertTrue(
+        Assert.assertTrue(
             new InMatch().match(RequestType.RPC, new Object[] {
                 RequestType.HTTP,
                 RequestType.DATABASE,
                 RequestType.RPC
             }));
-        Assertions.assertFalse(
+        Assert.assertFalse(
             new InMatch().match(RequestType.gRPC, new Object[] {
                                     RequestType.HTTP,
                                     RequestType.DATABASE,
@@ -48,23 +48,23 @@ public class InMatchTest {
                                 }
             ));
 
-        Assertions.assertTrue(new InMatch().match(1, new long[] {
+        Assert.assertTrue(new InMatch().match(1, new long[] {
             1,
             2,
             3
         }));
-        Assertions.assertFalse(new InMatch().match(4, new long[] {
+        Assert.assertFalse(new InMatch().match(4, new long[] {
             1,
             2,
             3
         }));
 
-        Assertions.assertTrue(new InMatch().match(1L, new long[] {
+        Assert.assertTrue(new InMatch().match(1L, new long[] {
             1,
             2,
             3
         }));
-        Assertions.assertFalse(new InMatch().match(4L, new long[] {
+        Assert.assertFalse(new InMatch().match(4L, new long[] {
             1,
             2,
             3

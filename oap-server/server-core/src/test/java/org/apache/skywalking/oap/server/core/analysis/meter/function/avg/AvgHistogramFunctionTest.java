@@ -18,7 +18,8 @@
 
 package org.apache.skywalking.oap.server.core.analysis.meter.function.avg;
 
-import org.apache.skywalking.oap.server.core.analysis.Layer;
+import java.util.Map;
+import java.util.stream.IntStream;
 import org.apache.skywalking.oap.server.core.analysis.meter.MeterEntity;
 import org.apache.skywalking.oap.server.core.analysis.meter.function.AcceptableValue;
 import org.apache.skywalking.oap.server.core.analysis.meter.function.BucketedValues;
@@ -27,15 +28,11 @@ import org.apache.skywalking.oap.server.core.config.NamingControl;
 import org.apache.skywalking.oap.server.core.config.group.EndpointNameGrouping;
 import org.apache.skywalking.oap.server.core.query.type.Bucket;
 import org.apache.skywalking.oap.server.core.query.type.HeatMap;
-import org.apache.skywalking.oap.server.core.storage.type.HashMapConverter;
-import org.apache.skywalking.oap.server.core.storage.type.StorageBuilder;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
-import java.util.Map;
-import java.util.stream.IntStream;
+import org.apache.skywalking.oap.server.core.storage.StorageHashMapBuilder;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import static org.apache.skywalking.oap.server.core.analysis.meter.function.avg.AvgHistogramFunction.DATASET;
 import static org.apache.skywalking.oap.server.core.analysis.meter.function.avg.AvgLabeledFunction.COUNT;
@@ -56,13 +53,13 @@ public class AvgHistogramFunctionTest {
         10
     };
 
-    @BeforeAll
+    @BeforeClass
     public static void setup() {
         MeterEntity.setNamingControl(
             new NamingControl(512, 512, 512, new EndpointNameGrouping()));
     }
 
-    @AfterAll
+    @AfterClass
     public static void tearDown() {
         MeterEntity.setNamingControl(null);
     }
@@ -71,7 +68,7 @@ public class AvgHistogramFunctionTest {
     public void testFunction() {
         HistogramFunctionInst inst = new HistogramFunctionInst();
         inst.accept(
-            MeterEntity.newService("service-test", Layer.GENERAL),
+            MeterEntity.newService("service-test"),
             new BucketedValues(
                 BUCKETS, new long[] {
                 0,
@@ -82,7 +79,7 @@ public class AvgHistogramFunctionTest {
         );
 
         inst.accept(
-            MeterEntity.newService("service-test", Layer.GENERAL),
+            MeterEntity.newService("service-test"),
             new BucketedValues(
                 BUCKETS, new long[] {
                 1,
@@ -94,9 +91,9 @@ public class AvgHistogramFunctionTest {
         inst.calculate();
 
         final int[] results = inst.getDataset().sortedValues(new HeatMap.KeyComparator(true)).stream()
-                                  .flatMapToInt(l -> IntStream.of(l.intValue()))
-                                  .toArray();
-        Assertions.assertArrayEquals(new int[] {
+            .flatMapToInt(l -> IntStream.of(l.intValue()))
+            .toArray();
+        Assert.assertArrayEquals(new int[] {
             1,
             3,
             6,
@@ -108,7 +105,7 @@ public class AvgHistogramFunctionTest {
     public void testFunctionWithInfinite() {
         HistogramFunctionInst inst = new HistogramFunctionInst();
         inst.accept(
-            MeterEntity.newService("service-test", Layer.GENERAL),
+            MeterEntity.newService("service-test"),
             new BucketedValues(
                 INFINITE_BUCKETS, new long[] {
                 0,
@@ -119,7 +116,7 @@ public class AvgHistogramFunctionTest {
         );
 
         inst.accept(
-            MeterEntity.newService("service-test", Layer.GENERAL),
+            MeterEntity.newService("service-test"),
             new BucketedValues(
                 INFINITE_BUCKETS, new long[] {
                 1,
@@ -131,14 +128,14 @@ public class AvgHistogramFunctionTest {
 
         inst.calculate();
 
-        Assertions.assertEquals(1L, inst.getDataset().get(Bucket.INFINITE_NEGATIVE).longValue());
+        Assert.assertEquals(1L, inst.getDataset().get(Bucket.INFINITE_NEGATIVE).longValue());
     }
 
     @Test
     public void testSerialization() {
         HistogramFunctionInst inst = new HistogramFunctionInst();
         inst.accept(
-            MeterEntity.newService("service-test", Layer.GENERAL),
+            MeterEntity.newService("service-test"),
             new BucketedValues(
                 BUCKETS, new long[] {
                 1,
@@ -152,16 +149,16 @@ public class AvgHistogramFunctionTest {
         final HistogramFunctionInst inst2 = new HistogramFunctionInst();
         inst2.deserialize(inst.serialize().build());
 
-        Assertions.assertEquals(inst, inst2);
+        Assert.assertEquals(inst, inst2);
         // HistogramFunction equal doesn't include dataset.
-        Assertions.assertEquals(inst.getDataset(), inst2.getDataset());
+        Assert.assertEquals(inst.getDataset(), inst2.getDataset());
     }
 
     @Test
     public void testSerializationInInfinite() {
         HistogramFunctionInst inst = new HistogramFunctionInst();
         inst.accept(
-            MeterEntity.newService("service-test", Layer.GENERAL),
+            MeterEntity.newService("service-test"),
             new BucketedValues(
                 INFINITE_BUCKETS, new long[] {
                 1,
@@ -174,16 +171,16 @@ public class AvgHistogramFunctionTest {
         final HistogramFunctionInst inst2 = new HistogramFunctionInst();
         inst2.deserialize(inst.serialize().build());
 
-        Assertions.assertEquals(inst, inst2);
+        Assert.assertEquals(inst, inst2);
         // HistogramFunction equal doesn't include dataset.
-        Assertions.assertEquals(inst.getDataset(), inst2.getDataset());
+        Assert.assertEquals(inst.getDataset(), inst2.getDataset());
     }
 
     @Test
     public void testBuilder() throws IllegalAccessException, InstantiationException {
         HistogramFunctionInst inst = new HistogramFunctionInst();
         inst.accept(
-            MeterEntity.newService("service-test", Layer.GENERAL),
+            MeterEntity.newService("service-test"),
             new BucketedValues(
                 BUCKETS, new long[] {
                 1,
@@ -194,21 +191,18 @@ public class AvgHistogramFunctionTest {
         );
         inst.calculate();
 
-        final StorageBuilder storageBuilder = inst.builder().newInstance();
+        final StorageHashMapBuilder storageBuilder = inst.builder().newInstance();
 
         // Simulate the storage layer do, convert the datatable to string.
-        final HashMapConverter.ToStorage toStorage = new HashMapConverter.ToStorage();
-        storageBuilder.entity2Storage(inst, toStorage);
-        final Map<String, Object> map = toStorage.obtain();
+        Map<String, Object> map = storageBuilder.entity2Storage(inst);
         map.put(SUMMATION, ((DataTable) map.get(SUMMATION)).toStorageData());
         map.put(COUNT, ((DataTable) map.get(COUNT)).toStorageData());
         map.put(DATASET, ((DataTable) map.get(DATASET)).toStorageData());
 
-        final AvgHistogramFunction inst2 = (AvgHistogramFunction) storageBuilder.storage2Entity(
-            new HashMapConverter.ToEntity(map));
-        Assertions.assertEquals(inst, inst2);
+        final AvgHistogramFunction inst2 = (AvgHistogramFunction) storageBuilder.storage2Entity(map);
+        Assert.assertEquals(inst, inst2);
         // HistogramFunction equal doesn't include dataset.
-        Assertions.assertEquals(inst.getDataset(), inst2.getDataset());
+        Assert.assertEquals(inst.getDataset(), inst2.getDataset());
     }
 
     @Test
@@ -224,7 +218,7 @@ public class AvgHistogramFunctionTest {
         });
         bv1.setGroup("g1");
         inst.accept(
-            MeterEntity.newService("service-test", Layer.GENERAL),
+            MeterEntity.newService("service-test"),
             bv1
         );
 
@@ -237,7 +231,7 @@ public class AvgHistogramFunctionTest {
         });
         bv2.setGroup("g1");
         inst.accept(
-            MeterEntity.newService("service-test", Layer.GENERAL),
+            MeterEntity.newService("service-test"),
             bv2
         );
         BucketedValues bv3 = new BucketedValues(
@@ -249,15 +243,15 @@ public class AvgHistogramFunctionTest {
         });
         bv3.setGroup("g2");
         inst.accept(
-            MeterEntity.newService("service-test", Layer.GENERAL),
+            MeterEntity.newService("service-test"),
             bv3
         );
         inst.calculate();
 
         int[] results = inst.getDataset().sortedValues(new HeatMap.KeyComparator(true)).stream()
-                            .flatMapToInt(l -> IntStream.of(l.intValue()))
-                            .toArray();
-        Assertions.assertArrayEquals(new int[] {
+            .flatMapToInt(l -> IntStream.of(l.intValue()))
+            .toArray();
+        Assert.assertArrayEquals(new int[] {
             1,
             3,
             6,

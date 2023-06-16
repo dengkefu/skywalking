@@ -25,16 +25,18 @@ import io.envoyproxy.envoy.data.accesslog.v3.TCPAccessLogEntry;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.apache.skywalking.apm.network.common.v3.DetectPoint;
-import org.apache.skywalking.apm.network.common.v3.KeyStringValuePair;
-import org.apache.skywalking.apm.network.servicemesh.v3.TCPServiceMeshMetric;
+import org.apache.skywalking.apm.network.servicemesh.v3.Protocol;
+import org.apache.skywalking.apm.network.servicemesh.v3.ServiceMeshMetric;
+import org.apache.skywalking.apm.network.servicemesh.v3.TCPInfo;
 import org.apache.skywalking.oap.server.receiver.envoy.als.ServiceMetaInfo;
 
+import static org.apache.skywalking.oap.server.library.util.StringUtil.isBlank;
 import static org.apache.skywalking.oap.server.receiver.envoy.als.LogEntry2MetricsAdapter.formatAsLong;
 import static org.apache.skywalking.oap.server.receiver.envoy.als.LogEntry2MetricsAdapter.parseInternalErrorCode;
 import static org.apache.skywalking.oap.server.receiver.envoy.als.LogEntry2MetricsAdapter.parseTLS;
 
 /**
- * Adapt {@link HTTPAccessLogEntry} objects to {@link TCPServiceMeshMetric} builders.
+ * Adapt {@link HTTPAccessLogEntry} objects to {@link ServiceMeshMetric} builders.
  */
 @RequiredArgsConstructor
 public class TCPLogEntry2MetricsAdapter {
@@ -49,11 +51,11 @@ public class TCPLogEntry2MetricsAdapter {
     protected final ServiceMetaInfo targetService;
 
     /**
-     * Adapt the {@code entry} into a downstream metrics {@link TCPServiceMeshMetric.Builder}.
+     * Adapt the {@code entry} into a downstream metrics {@link ServiceMeshMetric.Builder}.
      *
-     * @return the {@link TCPServiceMeshMetric.Builder} adapted from the given entry.
+     * @return the {@link ServiceMeshMetric.Builder} adapted from the given entry.
      */
-    public TCPServiceMeshMetric.Builder adaptToDownstreamMetrics() {
+    public ServiceMeshMetric.Builder adaptToDownstreamMetrics() {
         final AccessLogCommon properties = entry.getCommonProperties();
         final long startTime = formatAsLong(properties.getStartTime());
         final long duration = formatAsLong(properties.getTimeToLastDownstreamTxByte());
@@ -61,15 +63,16 @@ public class TCPLogEntry2MetricsAdapter {
         return adaptCommonPart()
             .setStartTime(startTime)
             .setEndTime(startTime + duration)
+            .setLatency((int) Math.max(1L, duration))
             .setDetectPoint(DetectPoint.server);
     }
 
     /**
-     * Adapt the {@code entry} into an upstream metrics {@link TCPServiceMeshMetric.Builder}.
+     * Adapt the {@code entry} into a upstream metrics {@link ServiceMeshMetric.Builder}.
      *
-     * @return the {@link TCPServiceMeshMetric.Builder} adapted from the given entry.
+     * @return the {@link ServiceMeshMetric.Builder} adapted from the given entry.
      */
-    public TCPServiceMeshMetric.Builder adaptToUpstreamMetrics() {
+    public ServiceMeshMetric.Builder adaptToUpstreamMetrics() {
         final AccessLogCommon properties = entry.getCommonProperties();
         final long startTime = formatAsLong(properties.getStartTime());
         final long outboundStartTime = startTime + formatAsLong(properties.getTimeToFirstUpstreamTxByte());
@@ -78,28 +81,27 @@ public class TCPLogEntry2MetricsAdapter {
         return adaptCommonPart()
             .setStartTime(outboundStartTime)
             .setEndTime(outboundEndTime)
+            .setLatency((int) Math.max(1L, outboundEndTime - outboundStartTime))
             .setDetectPoint(DetectPoint.client);
     }
 
-    public TCPServiceMeshMetric.Builder adaptCommonPart() {
+    public ServiceMeshMetric.Builder adaptCommonPart() {
         final AccessLogCommon properties = entry.getCommonProperties();
         final ConnectionProperties connectionProperties = entry.getConnectionProperties();
         final String tlsMode = parseTLS(properties.getTlsProperties());
         final String internalErrorCode = parseInternalErrorCode(properties.getResponseFlags());
-        final long internalRequestLatencyNanos = properties.getTimeToFirstUpstreamTxByte().getNanos();
-        final long internalResponseLatencyNanos =
-            properties.getTimeToLastDownstreamTxByte().getNanos()
-                - properties.getTimeToFirstUpstreamRxByte().getNanos();
 
-        final TCPServiceMeshMetric.Builder builder =
-            TCPServiceMeshMetric
-                .newBuilder()
-                .setTlsMode(tlsMode)
-                .setReceivedBytes(connectionProperties.getReceivedBytes())
-                .setSentBytes(connectionProperties.getSentBytes())
-                .setInternalErrorCode(internalErrorCode)
-                .setInternalRequestLatencyNanos(internalRequestLatencyNanos)
-                .setInternalResponseLatencyNanos(internalResponseLatencyNanos);
+        final ServiceMeshMetric.Builder builder =
+            ServiceMeshMetric.newBuilder()
+                             .setTlsMode(tlsMode)
+                             .setProtocol(Protocol.TCP)
+                             .setStatus(isBlank(internalErrorCode))
+                             .setTcp(
+                                 TCPInfo.newBuilder()
+                                        .setReceivedBytes(connectionProperties.getReceivedBytes())
+                                        .setSentBytes(connectionProperties.getSentBytes())
+                             )
+                             .setInternalErrorCode(internalErrorCode);
 
         Optional.ofNullable(sourceService)
                 .map(ServiceMetaInfo::getServiceName)
@@ -113,26 +115,6 @@ public class TCPLogEntry2MetricsAdapter {
         Optional.ofNullable(targetService)
                 .map(ServiceMetaInfo::getServiceInstanceName)
                 .ifPresent(builder::setDestServiceInstance);
-
-        Optional
-            .ofNullable(sourceService)
-            .map(ServiceMetaInfo::getTags)
-            .ifPresent(tags -> {
-                tags.forEach(p -> {
-                    builder.addSourceInstanceProperties(
-                        KeyStringValuePair.newBuilder().setKey(p.getKey()).setValue(p.getValue()));
-                });
-            });
-
-        Optional
-            .ofNullable(targetService)
-            .map(ServiceMetaInfo::getTags)
-            .ifPresent(tags -> {
-                tags.forEach(p -> {
-                    builder.addDestInstanceProperties(
-                        KeyStringValuePair.newBuilder().setKey(p.getKey()).setValue(p.getValue()));
-                });
-            });
 
         return builder;
     }

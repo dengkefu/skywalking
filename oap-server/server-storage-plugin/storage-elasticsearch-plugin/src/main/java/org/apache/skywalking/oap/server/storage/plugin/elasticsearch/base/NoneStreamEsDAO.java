@@ -22,30 +22,29 @@ import java.io.IOException;
 import java.util.Map;
 import org.apache.skywalking.oap.server.core.analysis.config.NoneStream;
 import org.apache.skywalking.oap.server.core.storage.INoneStreamDAO;
+import org.apache.skywalking.oap.server.core.storage.StorageHashMapBuilder;
 import org.apache.skywalking.oap.server.core.storage.model.Model;
-import org.apache.skywalking.oap.server.core.storage.type.StorageBuilder;
 import org.apache.skywalking.oap.server.library.client.elasticsearch.ElasticSearchClient;
 
 /**
  * Synchronize storage Elasticsearch implements
  */
 public class NoneStreamEsDAO extends EsDAO implements INoneStreamDAO {
-    private final StorageBuilder<NoneStream> storageBuilder;
+    private final StorageHashMapBuilder<NoneStream> storageBuilder;
 
     public NoneStreamEsDAO(ElasticSearchClient client,
-                           StorageBuilder<NoneStream> storageBuilder) {
+                           StorageHashMapBuilder<NoneStream> storageBuilder) {
         super(client);
         this.storageBuilder = storageBuilder;
     }
 
     @Override
     public void insert(Model model, NoneStream noneStream) throws IOException {
-        final ElasticSearchConverter.ToStorage toStorage = new ElasticSearchConverter.ToStorage(model.getName());
-        storageBuilder.entity2Storage(noneStream, toStorage);
         Map<String, Object> builder =
-            IndexController.INSTANCE.appendTableColumn(model, toStorage.obtain());
+            IndexController.INSTANCE.appendMetricTableColumn(model, storageBuilder.entity2Storage(
+                noneStream));
         String modelName = TimeSeriesUtils.writeIndexName(model, noneStream.getTimeBucket());
-        String id = IndexController.INSTANCE.generateDocId(model, noneStream.id().build());
+        String id = IndexController.INSTANCE.generateDocId(model, noneStream.id());
         getClient().forceInsert(modelName, id, builder);
     }
 }

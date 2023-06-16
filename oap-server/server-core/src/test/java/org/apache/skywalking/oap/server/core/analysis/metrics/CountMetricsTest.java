@@ -19,9 +19,8 @@
 package org.apache.skywalking.oap.server.core.analysis.metrics;
 
 import org.apache.skywalking.oap.server.core.remote.grpc.proto.RemoteData;
-import org.apache.skywalking.oap.server.core.storage.StorageID;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class CountMetricsTest {
     @Test
@@ -33,7 +32,7 @@ public class CountMetricsTest {
 
         impl.calculate();
 
-        Assertions.assertEquals(18, impl.getValue());
+        Assert.assertEquals(18, impl.getValue());
     }
 
     @Test
@@ -52,12 +51,12 @@ public class CountMetricsTest {
 
         impl.calculate();
 
-        Assertions.assertEquals(36, impl.getValue());
+        Assert.assertEquals(36, impl.getValue());
     }
 
     public class CountMetricsImpl extends CountMetrics {
         @Override
-        protected StorageID id0() {
+        protected String id0() {
             return null;
         }
 

@@ -1,6 +1,6 @@
 # Dynamic Configuration Etcd Implementation
 
-[Etcd](https://github.com/etcd-io/etcd) is also supported as a Dynamic Configuration Center (DCC). To use it, please configure it as follows:
+[Etcd](https://github.com/etcd-io/etcd) is also supported as Dynamic Configuration Center (DCC). To use it, please configure as follows:
 
 ```yaml
 configuration:
@@ -14,7 +14,7 @@ configuration:
     password: ${SW_CONFIG_ETCD_password:}
 ```
 
-**NOTE**: Since 8.7.0, only the v3 protocol is supported.
+**NOTE**: Only the v3 protocol is supported since 8.7.0.
 
 ## Config Storage
 ### Single Config
@@ -22,7 +22,7 @@ Single configs in etcd are key/value pairs:
 
 | Key | Value |
 |-----|-----|
-| {namespace}/configKey | configValue |
+| {namespace}/configKey | configVaule |
 
 e.g. The config is:
 ```
@@ -37,7 +37,7 @@ If `namespace = /skywalking` the config in etcd is:
 
 
 ### Group Config
-Group config in etcd are key/value pairs as well, and the key is composited by configKey and subItemKey with `/`.
+Group config in etcd are key/value pairs as well and the key is composited by configKey and subItemKey with `/`.
 
 | Key | Value |
 |-----|-----|

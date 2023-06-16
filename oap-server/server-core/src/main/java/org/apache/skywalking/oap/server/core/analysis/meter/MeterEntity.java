@@ -21,10 +21,8 @@ package org.apache.skywalking.oap.server.core.analysis.meter;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
-import java.util.Map;
 import org.apache.skywalking.oap.server.core.UnexpectedException;
 import org.apache.skywalking.oap.server.core.analysis.IDManager;
-import org.apache.skywalking.oap.server.core.analysis.Layer;
 import org.apache.skywalking.oap.server.core.config.NamingControl;
 import org.apache.skywalking.oap.server.core.source.DetectPoint;
 
@@ -40,16 +38,10 @@ public class MeterEntity {
     private ScopeType scopeType;
     private String serviceName;
     private String instanceName;
-    private Map<String, String> instanceProperties;
     private String endpointName;
-    private String processName;
     private String sourceServiceName;
     private String destServiceName;
-    private String sourceProcessId;
-    private String destProcessId;
     private DetectPoint detectPoint;
-    private Layer layer;
-    private int componentId;
 
     private MeterEntity() {
 
@@ -65,17 +57,10 @@ public class MeterEntity {
                     IDManager.ServiceID.buildId(serviceName, true), instanceName);
             case ENDPOINT:
                 return IDManager.EndpointID.buildId(IDManager.ServiceID.buildId(serviceName, true), endpointName);
-            case PROCESS:
-                return IDManager.ProcessID.buildId(IDManager.ServiceInstanceID.buildId(IDManager.ServiceID.buildId(serviceName, true), instanceName), processName);
             case SERVICE_RELATION:
                 return IDManager.ServiceID.buildRelationId(new IDManager.ServiceID.ServiceRelationDefine(
                     sourceServiceId(),
                     destServiceId()
-                ));
-            case PROCESS_RELATION:
-                return IDManager.ProcessID.buildRelationId(new IDManager.ProcessID.ProcessRelationDefine(
-                    sourceProcessId,
-                    destProcessId
                 ));
             default:
                 throw new UnexpectedException("Unexpected scope type of entity " + this.toString());
@@ -84,10 +69,6 @@ public class MeterEntity {
 
     public String serviceId() {
         return IDManager.ServiceID.buildId(serviceName, true);
-    }
-
-    public String serviceInstanceId() {
-        return IDManager.ServiceInstanceID.buildId(serviceId(), instanceName);
     }
 
     public String sourceServiceId() {
@@ -109,71 +90,42 @@ public class MeterEntity {
     /**
      * Create a service level meter entity.
      */
-    public static MeterEntity newService(String serviceName, Layer layer) {
+    public static MeterEntity newService(String serviceName) {
         final MeterEntity meterEntity = new MeterEntity();
         meterEntity.scopeType = ScopeType.SERVICE;
         meterEntity.serviceName = NAMING_CONTROL.formatServiceName(serviceName);
-        meterEntity.layer = layer;
         return meterEntity;
     }
 
     /**
      * Create a service instance level meter entity.
      */
-    public static MeterEntity newServiceInstance(String serviceName, String serviceInstance, Layer layer, Map<String, String> properties) {
+    public static MeterEntity newServiceInstance(String serviceName, String serviceInstance) {
         final MeterEntity meterEntity = new MeterEntity();
         meterEntity.scopeType = ScopeType.SERVICE_INSTANCE;
         meterEntity.serviceName = NAMING_CONTROL.formatServiceName(serviceName);
         meterEntity.instanceName = NAMING_CONTROL.formatInstanceName(serviceInstance);
-        meterEntity.instanceProperties = properties;
-        meterEntity.layer = layer;
         return meterEntity;
     }
 
     /**
      * Create an endpoint level meter entity.
      */
-    public static MeterEntity newEndpoint(String serviceName, String endpointName, Layer layer) {
+    public static MeterEntity newEndpoint(String serviceName, String endpointName) {
         final MeterEntity meterEntity = new MeterEntity();
         meterEntity.scopeType = ScopeType.ENDPOINT;
         meterEntity.serviceName = NAMING_CONTROL.formatServiceName(serviceName);
         meterEntity.endpointName = NAMING_CONTROL.formatEndpointName(serviceName, endpointName);
-        meterEntity.layer = layer;
-        return meterEntity;
-    }
-
-    public static MeterEntity newProcess(String serviceName, String instanceName, String processName, String layerName) {
-        final MeterEntity meterEntity = new MeterEntity();
-        meterEntity.scopeType = ScopeType.PROCESS;
-        meterEntity.serviceName = NAMING_CONTROL.formatServiceName(serviceName);
-        meterEntity.instanceName = NAMING_CONTROL.formatInstanceName(instanceName);
-        meterEntity.processName = processName;
-        meterEntity.layer = Layer.nameOf(layerName);
         return meterEntity;
     }
 
     public static MeterEntity newServiceRelation(String sourceServiceName,
                                                  String destServiceName,
-                                                 DetectPoint detectPoint, Layer layer) {
+                                                 DetectPoint detectPoint) {
         final MeterEntity meterEntity = new MeterEntity();
         meterEntity.scopeType = ScopeType.SERVICE_RELATION;
         meterEntity.sourceServiceName = NAMING_CONTROL.formatServiceName(sourceServiceName);
         meterEntity.destServiceName = NAMING_CONTROL.formatServiceName(destServiceName);
-        meterEntity.detectPoint = detectPoint;
-        meterEntity.layer = layer;
-        return meterEntity;
-    }
-
-    public static MeterEntity newProcessRelation(String serviceName, String instanceName,
-                                                 String sourceProcessId, String destProcessId,
-                                                 int componentId, DetectPoint detectPoint) {
-        final MeterEntity meterEntity = new MeterEntity();
-        meterEntity.scopeType = ScopeType.PROCESS_RELATION;
-        meterEntity.serviceName = serviceName;
-        meterEntity.instanceName = instanceName;
-        meterEntity.sourceProcessId = sourceProcessId;
-        meterEntity.destProcessId = destProcessId;
-        meterEntity.componentId = componentId;
         meterEntity.detectPoint = detectPoint;
         return meterEntity;
     }

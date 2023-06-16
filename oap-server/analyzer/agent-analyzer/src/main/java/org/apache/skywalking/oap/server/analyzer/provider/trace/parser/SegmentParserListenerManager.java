@@ -36,8 +36,7 @@ public class SegmentParserListenerManager implements ISegmentParserListenerManag
         spanListenerFactories.add(analysisListenerFactory);
     }
 
-    @Override
-    public List<AnalysisListenerFactory> getSpanListenerFactories() {
+    List<AnalysisListenerFactory> getSpanListenerFactories() {
         return spanListenerFactories;
     }
 }

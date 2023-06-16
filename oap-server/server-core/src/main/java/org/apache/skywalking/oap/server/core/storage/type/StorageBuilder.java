@@ -24,22 +24,10 @@ import org.apache.skywalking.oap.server.core.storage.StorageData;
  * Converter between the give T and K.
  *
  * @param <T> A storage entity implementation.
+ * @param <K> The data structure recognized by the storage implementation.
  */
-public interface StorageBuilder<T extends StorageData> {
-    /**
-     * Use the given converter to build an OAP entity object.
-     *
-     * @param converter to transfer data format
-     * @return an OAP entity object
-     */
-    T storage2Entity(Convert2Entity converter);
+public interface StorageBuilder<T extends StorageData, K> {
+    T storage2Entity(K storageData);
 
-    /**
-     * Use the given converter to build a database preferred structure.
-     *
-     * @param entity    to be used
-     * @param converter provides the converting logic and hosts the converted value. Use {@link
-     *                  Convert2Storage#obtain()} to read the converted data.
-     */
-    void entity2Storage(T entity, Convert2Storage converter);
+    K entity2Storage(T entity);
 }

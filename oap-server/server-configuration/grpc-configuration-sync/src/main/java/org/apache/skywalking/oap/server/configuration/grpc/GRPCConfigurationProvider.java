@@ -21,6 +21,7 @@ package org.apache.skywalking.oap.server.configuration.grpc;
 import com.google.common.base.Strings;
 import org.apache.skywalking.oap.server.configuration.api.AbstractConfigurationProvider;
 import org.apache.skywalking.oap.server.configuration.api.ConfigWatcherRegister;
+import org.apache.skywalking.oap.server.library.module.ModuleConfig;
 import org.apache.skywalking.oap.server.library.module.ModuleStartException;
 
 /**
@@ -31,24 +32,18 @@ import org.apache.skywalking.oap.server.library.module.ModuleStartException;
 public class GRPCConfigurationProvider extends AbstractConfigurationProvider {
     private RemoteEndpointSettings settings;
 
+    public GRPCConfigurationProvider() {
+        settings = new RemoteEndpointSettings();
+    }
+
     @Override
     public String name() {
         return "grpc";
     }
 
     @Override
-    public ConfigCreator newConfigCreator() {
-        return new ConfigCreator<RemoteEndpointSettings>() {
-            @Override
-            public Class type() {
-                return RemoteEndpointSettings.class;
-            }
-
-            @Override
-            public void onInitialized(final RemoteEndpointSettings initialized) {
-                settings = initialized;
-            }
-        };
+    public ModuleConfig createConfigBeanIfAbsent() {
+        return settings;
     }
 
     @Override

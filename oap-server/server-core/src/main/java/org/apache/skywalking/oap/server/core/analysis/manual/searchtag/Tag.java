@@ -33,7 +33,6 @@ import org.apache.skywalking.oap.server.library.util.CollectionUtils;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Tag {
-    public static final int TAG_LENGTH = 256;
     private String key;
     private String value;
 

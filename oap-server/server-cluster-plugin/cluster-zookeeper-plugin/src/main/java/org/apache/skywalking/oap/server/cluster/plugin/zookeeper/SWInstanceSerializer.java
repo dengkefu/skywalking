@@ -20,7 +20,6 @@ package org.apache.skywalking.oap.server.cluster.plugin.zookeeper;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import java.nio.charset.StandardCharsets;
 import org.apache.curator.x.discovery.ServiceInstance;
 import org.apache.curator.x.discovery.details.InstanceSerializer;
 import org.apache.skywalking.oap.server.core.cluster.RemoteInstance;
@@ -31,7 +30,7 @@ public class SWInstanceSerializer implements InstanceSerializer<RemoteInstance> 
 
     @Override
     public byte[] serialize(ServiceInstance<RemoteInstance> instance) throws Exception {
-        return gson.toJson(instance).getBytes(StandardCharsets.UTF_8);
+        return gson.toJson(instance).getBytes();
     }
 
     @Override

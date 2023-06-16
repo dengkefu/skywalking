@@ -17,19 +17,16 @@
 
 package org.apache.skywalking.library.elasticsearch.requests.factory.common;
 
-import java.util.HashMap;
-import java.util.Map;
 import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpRequestBuilder;
 import com.linecorp.armeria.common.MediaType;
-import org.apache.skywalking.library.elasticsearch.ElasticSearchVersion;
-import org.apache.skywalking.library.elasticsearch.requests.factory.SearchFactory;
-import org.apache.skywalking.library.elasticsearch.requests.search.Scroll;
-import org.apache.skywalking.library.elasticsearch.requests.search.Search;
-import org.apache.skywalking.library.elasticsearch.requests.search.SearchParams;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.skywalking.library.elasticsearch.ElasticSearchVersion;
+import org.apache.skywalking.library.elasticsearch.requests.factory.SearchFactory;
+import org.apache.skywalking.library.elasticsearch.requests.search.Search;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -39,7 +36,7 @@ public final class CommonSearchFactory implements SearchFactory {
     @SneakyThrows
     @Override
     public HttpRequest search(Search search,
-                              SearchParams params,
+                              Map<String, ?> queryParams,
                               String... indices) {
         final HttpRequestBuilder builder = HttpRequest.builder();
 
@@ -50,8 +47,8 @@ public final class CommonSearchFactory implements SearchFactory {
                    .pathParam("indices", String.join(",", indices));
         }
 
-        if (params != null) {
-            params.forEach(e -> builder.queryParam(e.getKey(), e.getValue()));
+        if (queryParams != null && !queryParams.isEmpty()) {
+            queryParams.forEach(builder::queryParam);
         }
 
         final byte[] content = version.codec().encode(search);
@@ -62,34 +59,5 @@ public final class CommonSearchFactory implements SearchFactory {
 
         return builder.content(MediaType.JSON, content)
                       .build();
-    }
-
-    @SneakyThrows
-    @Override
-    public HttpRequest scroll(Scroll scroll) {
-        final HttpRequestBuilder builder = HttpRequest.builder().get("/_search/scroll");
-
-        final byte[] content = version.codec().encode(scroll);
-
-        if (log.isDebugEnabled()) {
-            log.debug("Scroll request: {}", new String(content));
-        }
-
-        return builder.content(MediaType.JSON, content).build();
-    }
-
-    @SneakyThrows
-    @Override
-    public HttpRequest deleteScrollContext(String scrollId) {
-        final HttpRequestBuilder builder = HttpRequest.builder().delete("/_search/scroll");
-        final Map<String, String> params = new HashMap<>();
-        params.put("scroll_id", scrollId);
-        final byte[] content = version.codec().encode(params);
-
-        if (log.isDebugEnabled()) {
-            log.debug("Delete scroll context request: {}", new String(content));
-        }
-
-        return builder.content(MediaType.JSON, content).build();
     }
 }

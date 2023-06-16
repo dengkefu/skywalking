@@ -19,19 +19,22 @@
 package org.apache.skywalking.oap.server.starter.config;
 
 import org.apache.skywalking.oap.server.library.module.ApplicationConfiguration;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
 
+import java.util.List;
 import java.util.Properties;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 
 public class ApplicationConfigLoaderTestCase {
 
     private ApplicationConfiguration applicationConfiguration;
 
-    @BeforeEach
+    @Before
     public void setUp() throws ConfigFileNotFoundException {
         System.setProperty("SW_STORAGE", "mysql");
         System.setProperty("SW_RECEIVER_ZIPKIN", "default");
@@ -44,25 +47,33 @@ public class ApplicationConfigLoaderTestCase {
     public void testLoadConfig() {
         Properties providerConfig = applicationConfiguration.getModuleConfiguration("storage")
                                                             .getProviderConfiguration("mysql");
-        assertThat(providerConfig.get("metadataQueryMaxSize")).isEqualTo(5000);
-        assertThat(providerConfig.get("properties")).isInstanceOf(Properties.class);
+        assertThat(providerConfig.get("metadataQueryMaxSize"), is(5000));
+        assertThat(providerConfig.get("properties"), instanceOf(Properties.class));
         Properties properties = (Properties) providerConfig.get("properties");
-        assertThat(properties.get("jdbcUrl")).isEqualTo("jdbc:mysql://localhost:3306/swtest?rewriteBatchedStatements=true&allowMultiQueries=true");
+        assertThat(properties.get("jdbcUrl"), is("jdbc:mysql://localhost:3306/swtest?rewriteBatchedStatements=true"));
+    }
+
+    @Test
+    public void testLoadListTypeConfig() {
+        Properties providerConfig = applicationConfiguration.getModuleConfiguration("receiver_zipkin")
+                .getProviderConfiguration("default");
+        List<String> instanceNameRule = (List<String>) providerConfig.get("instanceNameRule");
+        assertEquals(2, instanceNameRule.size());
     }
 
     @Test
     public void testLoadStringTypeConfig() {
-        Properties providerConfig = applicationConfiguration.getModuleConfiguration("receiver-zipkin")
+        Properties providerConfig = applicationConfiguration.getModuleConfiguration("receiver_zipkin")
                 .getProviderConfiguration("default");
-        String host = (String) providerConfig.get("restHost");
+        String host = (String) providerConfig.get("host");
         assertEquals("0.0.0.0", host);
     }
 
     @Test
     public void testLoadIntegerTypeConfig() {
-        Properties providerConfig = applicationConfiguration.getModuleConfiguration("receiver-zipkin")
+        Properties providerConfig = applicationConfiguration.getModuleConfiguration("receiver_zipkin")
                 .getProviderConfiguration("default");
-        Integer port = (Integer) providerConfig.get("restPort");
+        Integer port = (Integer) providerConfig.get("port");
         assertEquals(Integer.valueOf(9411), port);
     }
 

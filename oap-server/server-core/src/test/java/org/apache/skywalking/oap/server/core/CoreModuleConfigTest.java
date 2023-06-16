@@ -19,27 +19,26 @@
 package org.apache.skywalking.oap.server.core;
 
 import org.apache.commons.lang3.StringUtils;
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class CoreModuleConfigTest {
 
     @Test
     public void testRoleFromNameNormalSituation() {
-        assertEquals(CoreModuleConfig.Role.Mixed, CoreModuleConfig.Role.fromName("Mixed"));
-        assertEquals(CoreModuleConfig.Role.Receiver, CoreModuleConfig.Role.fromName("Receiver"));
-        assertEquals(CoreModuleConfig.Role.Aggregator, CoreModuleConfig.Role.fromName("Aggregator"));
+        Assert.assertEquals(CoreModuleConfig.Role.Mixed, CoreModuleConfig.Role.fromName("Mixed"));
+        Assert.assertEquals(CoreModuleConfig.Role.Receiver, CoreModuleConfig.Role.fromName("Receiver"));
+        Assert.assertEquals(CoreModuleConfig.Role.Aggregator, CoreModuleConfig.Role.fromName("Aggregator"));
     }
 
     @Test
     public void testRoleFromNameBlockParameter() {
-        assertEquals(CoreModuleConfig.Role.Mixed, CoreModuleConfig.Role.fromName(StringUtils.EMPTY));
-        assertEquals(CoreModuleConfig.Role.Mixed, CoreModuleConfig.Role.fromName(null));
+        Assert.assertEquals(CoreModuleConfig.Role.Mixed, CoreModuleConfig.Role.fromName(StringUtils.EMPTY));
+        Assert.assertEquals(CoreModuleConfig.Role.Mixed, CoreModuleConfig.Role.fromName(null));
     }
 
     @Test
     public void testRoleFromNameNotIncludeRole() {
-        assertEquals(CoreModuleConfig.Role.Mixed, CoreModuleConfig.Role.fromName("a"));
+        Assert.assertEquals(CoreModuleConfig.Role.Mixed, CoreModuleConfig.Role.fromName("a"));
     }
 }

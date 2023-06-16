@@ -20,160 +20,180 @@ package org.apache.skywalking.oap.meter.analyzer.dsl;
 
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
 import java.util.Collection;
 
 import static com.google.common.collect.ImmutableMap.of;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.fail;
 
 @Slf4j
+@RunWith(Parameterized.class)
 public class ArithmeticTest {
+
+    @Parameterized.Parameter
+    public String name;
+
+    @Parameterized.Parameter(1)
+    public ImmutableMap<String, SampleFamily> input;
+
+    @Parameterized.Parameter(2)
+    public String expression;
+
+    @Parameterized.Parameter(3)
+    public Result want;
+
+    @Parameterized.Parameter(4)
+    public boolean isThrow;
+
+    @Parameterized.Parameters(name = "{index}: {0}")
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][] {
             {
                 "plus-scalar-1",
-                of("http_success_request", SampleFamilyBuilder.newBuilder(
+                of("instance_cpu_percentage", SampleFamilyBuilder.newBuilder(
                     Sample.builder()
                           .labels(of("idc", "t1"))
                           .value(1600592418480.0)
-                          .name("http_success_request")
+                          .name("instance_cpu_percentage")
                           .build(),
                     Sample.builder()
                           .labels(of("idc", "t2"))
                           .value(1600592418481.0)
-                          .name("http_success_request")
+                          .name("instance_cpu_percentage")
                           .build()
                 ).build()),
-                "1000 + http_success_request.tagEqual('idc','t1')",
+                "1000 + instance_cpu_percentage.tagEqual('idc','t1')",
                 Result.success(SampleFamilyBuilder.newBuilder(
                     Sample.builder()
                           .labels(of("idc", "t1"))
                           .value(1600592419480.0)
-                          .name("http_success_request")
+                          .name("instance_cpu_percentage")
                           .build()
                 ).build()),
                 false,
                 },
             {
                 "plus-scalar",
-                of("http_success_request", SampleFamilyBuilder.newBuilder(
+                of("instance_cpu_percentage", SampleFamilyBuilder.newBuilder(
                     Sample.builder()
                           .labels(of("idc", "t1"))
                           .value(1600592418480.0)
-                          .name("http_success_request")
+                          .name("instance_cpu_percentage")
                           .build(),
                     Sample.builder()
                           .labels(of("idc", "t2"))
                           .value(1600592418481.0)
-                          .name("http_success_request")
+                          .name("instance_cpu_percentage")
                           .build()
                 ).build()),
-                "http_success_request.tagEqual('idc','t1') + 1000",
+                "instance_cpu_percentage.tagEqual('idc','t1') + 1000",
                 Result.success(SampleFamilyBuilder.newBuilder(
                     Sample.builder()
                           .labels(of("idc", "t1"))
                           .value(1600592419480.0)
-                          .name("http_success_request")
+                          .name("instance_cpu_percentage")
                           .build()
                 ).build()),
                 false,
                 },
             {
                 "minus-scalar",
-                of("http_success_request", SampleFamilyBuilder.newBuilder(
+                of("instance_cpu_percentage", SampleFamilyBuilder.newBuilder(
                     Sample.builder()
                           .labels(of("idc", "t1"))
                           .value(1600592418480.0)
-                          .name("http_success_request")
+                          .name("instance_cpu_percentage")
                           .build(),
                     Sample.builder()
                           .labels(of("idc", "t2"))
                           .value(1600592418481.0)
-                          .name("http_success_request")
+                          .name("instance_cpu_percentage")
                           .build()
                 ).build()),
-                "http_success_request.tagEqual('idc','t1') - 1000",
+                "instance_cpu_percentage.tagEqual('idc','t1') - 1000",
                 Result.success(SampleFamilyBuilder.newBuilder(
                     Sample.builder()
                           .labels(of("idc", "t1"))
                           .value(1600592417480.0)
-                          .name("http_success_request")
+                          .name("instance_cpu_percentage")
                           .build()
                 ).build()),
                 false,
                 },
             {
                 "multiply-scalar",
-                of("http_success_request", SampleFamilyBuilder.newBuilder(
+                of("instance_cpu_percentage", SampleFamilyBuilder.newBuilder(
                     Sample.builder()
                           .labels(of("idc", "t1"))
                           .value(1600592418480.0)
-                          .name("http_success_request")
+                          .name("instance_cpu_percentage")
                           .build(),
                     Sample.builder()
                           .labels(of("idc", "t2"))
                           .value(1600592418481.0)
-                          .name("http_success_request")
+                          .name("instance_cpu_percentage")
                           .build()
                 ).build()),
-                "http_success_request.tagEqual('idc','t1') * 1000",
+                "instance_cpu_percentage.tagEqual('idc','t1') * 1000",
                 Result.success(SampleFamilyBuilder.newBuilder(
                     Sample.builder()
                           .labels(of("idc", "t1"))
                           .value(1600592418480000.0)
-                          .name("http_success_request")
+                          .name("instance_cpu_percentage")
                           .build()
                 ).build()),
                 false,
                 },
             {
                 "divide-scalar",
-                of("http_success_request", SampleFamilyBuilder.newBuilder(
+                of("instance_cpu_percentage", SampleFamilyBuilder.newBuilder(
                     Sample.builder()
                           .labels(of("idc", "t1"))
                           .value(1600592418480.0)
-                          .name("http_success_request")
+                          .name("instance_cpu_percentage")
                           .build(),
                     Sample.builder()
                           .labels(of("idc", "t2"))
                           .value(1600592418481.0)
-                          .name("http_success_request")
+                          .name("instance_cpu_percentage")
                           .build()
                 ).build()),
-                "http_success_request.tagEqual('idc','t1') / 10",
+                "instance_cpu_percentage.tagEqual('idc','t1') / 10",
                 Result.success(SampleFamilyBuilder.newBuilder(
                     Sample.builder()
                           .labels(of("idc", "t1"))
                           .value(160059241848.0)
-                          .name("http_success_request")
+                          .name("instance_cpu_percentage")
                           .build()
                 ).build()),
                 false,
                 },
             {
                 "divide-zero",
-                of("http_success_request", SampleFamilyBuilder.newBuilder(
+                of("instance_cpu_percentage", SampleFamilyBuilder.newBuilder(
                     Sample.builder()
                           .labels(of("idc", "t1"))
                           .value(1600592418480.0)
-                          .name("http_success_request")
+                          .name("instance_cpu_percentage")
                           .build(),
                     Sample.builder()
                           .labels(of("idc", "t2"))
                           .value(1600592418481.0)
-                          .name("http_success_request")
+                          .name("instance_cpu_percentage")
                           .build()
                 ).build()),
-                "http_success_request.tagEqual('idc','t1') / 0",
+                "instance_cpu_percentage.tagEqual('idc','t1') / 0",
                 Result.success(SampleFamilyBuilder.newBuilder(
                     Sample.builder()
                           .labels(of("idc", "t1"))
                           .value(Double.POSITIVE_INFINITY)
-                          .name("http_success_request")
+                          .name("instance_cpu_percentage")
                           .build()
                 ).build()),
                 false,
@@ -446,13 +466,8 @@ public class ArithmeticTest {
             });
     }
 
-    @ParameterizedTest(name = "{0}")
-    @MethodSource("data")
-    public void test(String name,
-                     ImmutableMap<String, SampleFamily> input,
-                     String expression,
-                     Result want,
-                     boolean isThrow) {
+    @Test
+    public void test() {
         Expression e = DSL.parse(expression);
         Result r = null;
         try {
@@ -467,6 +482,6 @@ public class ArithmeticTest {
         if (isThrow) {
             fail("Should throw something");
         }
-        assertThat(r).isEqualTo(want);
+        assertThat(r, is(want));
     }
 }

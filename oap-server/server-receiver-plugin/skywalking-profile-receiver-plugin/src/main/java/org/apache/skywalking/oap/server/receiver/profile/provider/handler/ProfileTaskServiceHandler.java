@@ -18,7 +18,6 @@
 
 package org.apache.skywalking.oap.server.receiver.profile.provider.handler;
 
-import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -33,10 +32,11 @@ import org.apache.skywalking.oap.server.core.analysis.TimeBucket;
 import org.apache.skywalking.oap.server.core.analysis.worker.RecordStreamProcessor;
 import org.apache.skywalking.oap.server.core.cache.ProfileTaskCache;
 import org.apache.skywalking.oap.server.core.command.CommandService;
-import org.apache.skywalking.oap.server.core.profiling.trace.ProfileTaskLogRecord;
-import org.apache.skywalking.oap.server.core.profiling.trace.ProfileThreadSnapshotRecord;
+import org.apache.skywalking.oap.server.core.profile.ProfileTaskLogRecord;
+import org.apache.skywalking.oap.server.core.profile.ProfileThreadSnapshotRecord;
 import org.apache.skywalking.oap.server.core.query.type.ProfileTask;
 import org.apache.skywalking.oap.server.core.query.type.ProfileTaskLogOperationType;
+import org.apache.skywalking.oap.server.core.analysis.NodeType;
 import org.apache.skywalking.oap.server.library.module.ModuleManager;
 import org.apache.skywalking.oap.server.library.server.grpc.GRPCHandler;
 import org.apache.skywalking.oap.server.library.util.CollectionUtils;
@@ -58,7 +58,7 @@ public class ProfileTaskServiceHandler extends ProfileTaskGrpc.ProfileTaskImplBa
     @Override
     public void getProfileTaskCommands(ProfileTaskCommandQuery request, StreamObserver<Commands> responseObserver) {
         // query profile task list by service id
-        final String serviceId = IDManager.ServiceID.buildId(request.getService(), true);
+        final String serviceId = IDManager.ServiceID.buildId(request.getService(), NodeType.Normal);
         final String serviceInstanceId = IDManager.ServiceInstanceID.buildId(serviceId, request.getServiceInstance());
         final List<ProfileTask> profileTaskList = profileTaskCache.getProfileTaskList(serviceId);
         if (CollectionUtils.isEmpty(profileTaskList)) {
@@ -112,14 +112,8 @@ public class ProfileTaskServiceHandler extends ProfileTaskGrpc.ProfileTaskImplBa
 
             @Override
             public void onError(Throwable throwable) {
-                Status status = Status.fromThrowable(throwable);
-                if (Status.CANCELLED.getCode() == status.getCode()) {
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug(throwable.getMessage(), throwable);
-                    }
-                    return;
-                }
                 LOGGER.error(throwable.getMessage(), throwable);
+                responseObserver.onCompleted();
             }
 
             @Override
@@ -133,7 +127,7 @@ public class ProfileTaskServiceHandler extends ProfileTaskGrpc.ProfileTaskImplBa
     @Override
     public void reportTaskFinish(ProfileTaskFinishReport request, StreamObserver<Commands> responseObserver) {
         // query task from cache, set log time bucket need it
-        final String serviceId = IDManager.ServiceID.buildId(request.getService(), true);
+        final String serviceId = IDManager.ServiceID.buildId(request.getService(), NodeType.Normal);
         final String serviceInstanceId = IDManager.ServiceInstanceID.buildId(serviceId, request.getServiceInstance());
         final ProfileTask profileTask = profileTaskCache.getProfileTaskById(request.getTaskId());
 
@@ -153,10 +147,9 @@ public class ProfileTaskServiceHandler extends ProfileTaskGrpc.ProfileTaskImplBa
         logRecord.setOperationType(operationType.getCode());
         logRecord.setOperationTime(System.currentTimeMillis());
         // same with task time bucket, ensure record will ttl same with profile task
-        long timestamp = task.getStartTime() + TimeUnit.MINUTES.toMillis(task.getDuration());
         logRecord.setTimeBucket(
-            TimeBucket.getRecordTimeBucket(timestamp));
-        logRecord.setTimestamp(timestamp);
+            TimeBucket.getRecordTimeBucket(task.getStartTime() + TimeUnit.MINUTES.toMillis(task.getDuration())));
+
         RecordStreamProcessor.getInstance().in(logRecord);
     }
 

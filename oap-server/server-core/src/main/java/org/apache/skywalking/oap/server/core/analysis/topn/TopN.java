@@ -22,7 +22,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.apache.skywalking.oap.server.core.analysis.record.Record;
 import org.apache.skywalking.oap.server.core.storage.ComparableStorageData;
-import org.apache.skywalking.oap.server.core.storage.annotation.BanyanDB;
 import org.apache.skywalking.oap.server.core.storage.annotation.Column;
 
 /**
@@ -32,27 +31,20 @@ public abstract class TopN extends Record implements ComparableStorageData {
     public static final String STATEMENT = "statement";
     public static final String LATENCY = "latency";
     public static final String TRACE_ID = "trace_id";
-    public static final String ENTITY_ID = "entity_id";
-    public static final String TIMESTAMP = "timestamp";
+    public static final String SERVICE_ID = "service_id";
     
     @Getter
     @Setter
-    @Column(name = LATENCY, dataType = Column.ValueDataType.SAMPLED_RECORD)
-    @BanyanDB.IndexRule(indexType = BanyanDB.IndexRule.IndexType.TREE)
+    @Column(columnName = LATENCY, dataType = Column.ValueDataType.SAMPLED_RECORD)
     private long latency;
     @Getter
     @Setter
-    @Column(name = TRACE_ID, storageOnly = true)
+    @Column(columnName = TRACE_ID)
     private String traceId;
     @Getter
     @Setter
-    @Column(name = ENTITY_ID, length = 512)
-    @BanyanDB.SeriesID(index = 0)
-    private String entityId;
-    @Getter
-    @Setter
-    @Column(name = TIMESTAMP)
-    private long timestamp;
+    @Column(columnName = SERVICE_ID)
+    private String serviceId;
 
     @Override
     public int compareTo(Object o) {

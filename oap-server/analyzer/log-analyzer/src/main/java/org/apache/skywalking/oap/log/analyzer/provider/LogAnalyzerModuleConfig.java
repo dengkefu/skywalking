@@ -19,8 +19,6 @@ package org.apache.skywalking.oap.log.analyzer.provider;
 
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
-
-import java.io.IOException;
 import java.util.List;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -53,7 +51,7 @@ public class LogAnalyzerModuleConfig extends ModuleConfig {
     private List<Rule> meterConfigs;
 
     public List<String> lalFiles() {
-        return Splitter.on(",").omitEmptyStrings().trimResults().splitToList(Strings.nullToEmpty(getLalFiles()));
+        return Splitter.on(",").omitEmptyStrings().splitToList(Strings.nullToEmpty(getLalFiles()));
     }
 
     public List<Rule> malConfigs() throws ModuleStartException {
@@ -63,11 +61,7 @@ public class LogAnalyzerModuleConfig extends ModuleConfig {
         final List<String> files = Splitter.on(",")
                                            .omitEmptyStrings()
                                            .splitToList(Strings.nullToEmpty(getMalFiles()));
-        try {
-            meterConfigs = Rules.loadRules(getMalPath(), files);
-        } catch (IOException e) {
-            throw new ModuleStartException("Failed to load MAL rules", e);
-        }
+        meterConfigs = Rules.loadRules(getMalPath(), files);
 
         return meterConfigs;
     }

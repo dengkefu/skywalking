@@ -16,7 +16,3 @@
 - id: {{ b64enc "test-ui" }}.1
   name: test-ui
   group: ""
-  shortname: test-ui
-  normal: true
-  layers:
-    - BROWSER

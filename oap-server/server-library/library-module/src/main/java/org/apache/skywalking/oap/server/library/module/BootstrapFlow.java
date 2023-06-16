@@ -19,19 +19,22 @@
 package org.apache.skywalking.oap.server.library.module;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.skywalking.oap.server.library.util.CollectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@Slf4j
 class BootstrapFlow {
+    private static final Logger LOGGER = LoggerFactory.getLogger(BootstrapFlow.class);
+
     private Map<String, ModuleDefine> loadedModules;
     private List<ModuleProvider> startupSequence;
 
     BootstrapFlow(Map<String, ModuleDefine> loadedModules) throws CycleDependencyException, ModuleNotFoundException {
         this.loadedModules = loadedModules;
-        startupSequence = new ArrayList<>();
+        startupSequence = new LinkedList<>();
 
         makeSequence();
     }
@@ -40,7 +43,7 @@ class BootstrapFlow {
     void start(
         ModuleManager moduleManager) throws ModuleNotFoundException, ServiceNotProvidedException, ModuleStartException {
         for (ModuleProvider provider : startupSequence) {
-            log.info("start the provider {} in {} module.", provider.name(), provider.getModuleName());
+            LOGGER.info("start the provider {} in {} module.", provider.name(), provider.getModuleName());
             provider.requiredCheck(provider.getModule().services());
 
             provider.start();

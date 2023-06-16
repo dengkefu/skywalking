@@ -22,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.skywalking.oap.server.library.util.StringUtil;
 import org.apache.skywalking.oap.server.core.CoreModule;
 import org.apache.skywalking.oap.server.core.analysis.IDManager;
+import org.apache.skywalking.oap.server.core.analysis.NodeType;
 import org.apache.skywalking.oap.server.core.analysis.TimeBucket;
 import org.apache.skywalking.oap.server.core.browser.source.BrowserErrorCategory;
 import org.apache.skywalking.oap.server.core.browser.source.BrowserErrorLog;
@@ -77,7 +78,7 @@ public class ErrorLogRecordListener implements ErrorLogAnalysisListener {
 
         // service
         String serviceName = namingControl.formatServiceName(decorator.getService());
-        String serviceId = IDManager.ServiceID.buildId(serviceName, true);
+        String serviceId = IDManager.ServiceID.buildId(serviceName, NodeType.Browser);
         errorLog.setServiceId(serviceId);
 
         // service version

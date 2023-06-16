@@ -20,7 +20,6 @@ package org.apache.skywalking.oap.server.storage.plugin.elasticsearch;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.skywalking.oap.server.core.storage.annotation.ElasticSearch;
 import org.apache.skywalking.oap.server.core.storage.annotation.SuperDataset;
 import org.apache.skywalking.oap.server.library.module.ModuleConfig;
 
@@ -35,18 +34,13 @@ public class StorageModuleElasticsearchConfig extends ModuleConfig {
      *
      * @since 8.7.0
      */
-    private int connectTimeout = 3000;
+    private int connectTimeout = 500;
     /**
      * Socket timeout of ElasticSearch client.
      *
      * @since 8.7.0
      */
     private int socketTimeout = 30000;
-    /**
-     * @since 9.0.0 the response timeout of ElasticSearch client (Armeria under the hood), set to 0 to disable response
-     * timeout.
-     */
-    private int responseTimeout = 15000;
     /**
      * @since 6.4.0, the index of metrics and traces data in minute/hour/month precision are organized in days. ES
      * storage creates new indexes in every day.
@@ -58,14 +52,6 @@ public class StorageModuleElasticsearchConfig extends ModuleConfig {
     private int dayStep = 1;
     private int indexReplicasNumber = 0;
     private int indexShardsNumber = 1;
-    /**
-     * @since 9.3.0, Specify the settings for each index individually.
-     * Use JSON format and the index name in the config should exclude the `${SW_NAMESPACE}` e.g.
-     * {"metrics-all":{"number_of_shards":"3","number_of_replicas":"2"},"segment":{"number_of_shards":"6","number_of_replicas":"1"}}
-     * If configured, this setting has the highest priority and overrides the generic settings.
-     */
-    private String specificIndexSettings;
-
     /**
      * @since 8.2.0, the record day step is for super size dataset record index rolling when the value of it is greater
      * than 0
@@ -88,13 +74,15 @@ public class StorageModuleElasticsearchConfig extends ModuleConfig {
      * @since 8.7.0 This setting affects all traces/logs/metrics/metadata flush policy.
      */
     private int bulkActions = 5000;
-
-    private int batchOfBytes = 1024 * 1024 * 10;
     /**
-     * Period of flush, no matter `bulkActions` reached or not.
+     * Period of flesh, no matter `bulkActions` reached or not.
+     * INT(flushInterval * 2/3) would be used for index refresh period.
      * Unit is second.
+     *
+     * @since 8.7.0 increase to 15s from 10s
+     * @since 8.7.0 use INT(flushInterval * 2/3) as ElasticSearch index refresh interval. Default is 10s.
      */
-    private int flushInterval = 5;
+    private int flushInterval = 15;
     private int concurrentRequests = 2;
     /**
      * @since 7.0.0 This could be managed inside {@link #secretsManagementFile}
@@ -115,28 +103,16 @@ public class StorageModuleElasticsearchConfig extends ModuleConfig {
     private String trustStorePass;
     private int resultWindowMaxSize = 10000;
     private int metadataQueryMaxSize = 5000;
-    /**
-     * @since 9.0.0 The batch size that is used to scroll on the large results,
-     * if {@link #metadataQueryMaxSize} is larger than the maximum result window in
-     * ElasticSearch server, this can be used to retrieve all results.
-     */
-    private int scrollingBatchSize = 5000;
     private int segmentQueryMaxSize = 200;
     private int profileTaskQueryMaxSize = 200;
     /**
-     * The batch size that is used to scroll on the large eBPF profiling data result.
-     * The profiling data contains full-stack symbol data, which could make ElasticSearch response large content.
-     * {@link #scrollingBatchSize} would not be used in profiling data query.
-     */
-    private int profileDataQueryBatchSize = 100;
-    /**
-     * The default analyzer for match query field. {@link ElasticSearch.MatchQuery.AnalyzerType#OAP_ANALYZER}
+     * The default analyzer for match query field. {@link org.apache.skywalking.oap.server.core.storage.annotation.Column.AnalyzerType#OAP_ANALYZER}
      *
      * @since 8.4.0
      */
     private String oapAnalyzer = "{\"analyzer\":{\"oap_analyzer\":{\"type\":\"stop\"}}}";
     /**
-     * The log analyzer for match query field. {@link ElasticSearch.MatchQuery.AnalyzerType#OAP_LOG_ANALYZER}
+     * The log analyzer for match query field. {@link org.apache.skywalking.oap.server.core.storage.annotation.Column.AnalyzerType#OAP_LOG_ANALYZER}
      *
      * @since 8.4.0
      */
@@ -145,20 +121,7 @@ public class StorageModuleElasticsearchConfig extends ModuleConfig {
 
     /**
      * The number of threads for the underlying HTTP client to perform socket I/O.
-     * If the value is {@code <= 0}, the number of available processors will be used.
+     * If the value is <= 0, the number of available processors will be used.
      */
     private int numHttpClientThread;
-
-    /**
-     * If disabled, all metrics would be persistent in one physical index template, to reduce the number of physical indices.
-     * If enabled, shard metrics indices into multi-physical indices, one index template per metric/meter aggregation function.
-     *
-     * @since 9.2.0
-     */
-    private boolean logicSharding = false;
-
-    /**
-     * if enabled, custom routing values will be used, to reduce the number of shards that need to be searched.
-     */
-    private boolean enableCustomRouting = false;
 }

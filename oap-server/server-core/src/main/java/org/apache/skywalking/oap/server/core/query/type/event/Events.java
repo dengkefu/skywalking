@@ -18,20 +18,13 @@
 
 package org.apache.skywalking.oap.server.core.query.type.event;
 
-import lombok.Data;
-
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Data;
 
 @Data
 public class Events {
-    private final List<Event> events;
+    private List<Event> events = new ArrayList<>();
 
-    public Events() {
-        events = new ArrayList<>();
-    }
-
-    public Events(List<Event> events) {
-        this.events = events;
-    }
+    private long total;
 }

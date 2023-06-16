@@ -18,7 +18,7 @@
 
 package org.apache.skywalking.oap.server.core.analysis.meter.function.avg;
 
-import org.apache.skywalking.oap.server.core.analysis.Layer;
+import java.util.Map;
 import org.apache.skywalking.oap.server.core.analysis.meter.MeterEntity;
 import org.apache.skywalking.oap.server.core.analysis.meter.function.AcceptableValue;
 import org.apache.skywalking.oap.server.core.analysis.meter.function.BucketedValues;
@@ -27,16 +27,13 @@ import org.apache.skywalking.oap.server.core.analysis.metrics.DataTable;
 import org.apache.skywalking.oap.server.core.analysis.metrics.IntList;
 import org.apache.skywalking.oap.server.core.config.NamingControl;
 import org.apache.skywalking.oap.server.core.config.group.EndpointNameGrouping;
-import org.apache.skywalking.oap.server.core.storage.type.HashMapConverter;
-import org.apache.skywalking.oap.server.core.storage.type.StorageBuilder;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.apache.skywalking.oap.server.core.storage.StorageHashMapBuilder;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
-import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 public class AvgHistogramPercentileFunctionTest {
 
@@ -52,13 +49,13 @@ public class AvgHistogramPercentileFunctionTest {
         90
     };
 
-    @BeforeAll
+    @BeforeClass
     public static void setup() {
         MeterEntity.setNamingControl(
             new NamingControl(512, 512, 512, new EndpointNameGrouping()));
     }
 
-    @AfterAll
+    @AfterClass
     public static void tearDown() {
         MeterEntity.setNamingControl(null);
     }
@@ -67,7 +64,7 @@ public class AvgHistogramPercentileFunctionTest {
     public void testFunction() {
         PercentileFunctionInst inst = new PercentileFunctionInst();
         inst.accept(
-            MeterEntity.newService("service-test", Layer.GENERAL),
+            MeterEntity.newService("service-test"),
             new PercentileArgument(
                 new BucketedValues(
                     BUCKETS,
@@ -83,7 +80,7 @@ public class AvgHistogramPercentileFunctionTest {
         );
 
         inst.accept(
-            MeterEntity.newService("service-test", Layer.GENERAL),
+            MeterEntity.newService("service-test"),
             new PercentileArgument(
                 new BucketedValues(
                     BUCKETS,
@@ -109,7 +106,7 @@ public class AvgHistogramPercentileFunctionTest {
          *     250, 40 <- P90
          * </pre>
          */
-        Assertions.assertArrayEquals(new int[] {
+        Assert.assertArrayEquals(new int[] {
             100,
             250
         }, values);
@@ -119,7 +116,7 @@ public class AvgHistogramPercentileFunctionTest {
     public void testSerialization() {
         PercentileFunctionInst inst = new PercentileFunctionInst();
         inst.accept(
-            MeterEntity.newService("service-test", Layer.GENERAL),
+            MeterEntity.newService("service-test"),
             new PercentileArgument(
                 new BucketedValues(
                     BUCKETS,
@@ -148,7 +145,7 @@ public class AvgHistogramPercentileFunctionTest {
     public void testBuilder() throws IllegalAccessException, InstantiationException {
         PercentileFunctionInst inst = new PercentileFunctionInst();
         inst.accept(
-            MeterEntity.newService("service-test", Layer.GENERAL),
+            MeterEntity.newService("service-test"),
             new PercentileArgument(
                 new BucketedValues(
                     BUCKETS,
@@ -164,12 +161,10 @@ public class AvgHistogramPercentileFunctionTest {
         );
         inst.calculate();
 
-        final StorageBuilder storageBuilder = inst.builder().newInstance();
+        final StorageHashMapBuilder storageBuilder = inst.builder().newInstance();
 
         // Simulate the storage layer do, convert the datatable to string.
-        final HashMapConverter.ToStorage toStorage = new HashMapConverter.ToStorage();
-        storageBuilder.entity2Storage(inst, toStorage);
-        final Map<String, Object> map = toStorage.obtain();
+        final Map map = storageBuilder.entity2Storage(inst);
         map.put(
             AvgHistogramPercentileFunction.COUNT,
             ((DataTable) map.get(AvgHistogramPercentileFunction.COUNT)).toStorageData()
@@ -191,8 +186,7 @@ public class AvgHistogramPercentileFunctionTest {
             ((IntList) map.get(AvgHistogramPercentileFunction.RANKS)).toStorageData()
         );
 
-        final AvgHistogramPercentileFunction inst2 = (AvgHistogramPercentileFunction) storageBuilder.storage2Entity(
-            new HashMapConverter.ToEntity(map));
+        final AvgHistogramPercentileFunction inst2 = (AvgHistogramPercentileFunction) storageBuilder.storage2Entity(map);
         assertEquals(inst, inst2);
         // HistogramFunction equal doesn't include dataset.
         assertEquals(inst.getDataset(), inst2.getDataset());
@@ -215,7 +209,7 @@ public class AvgHistogramPercentileFunctionTest {
 
         PercentileFunctionInst inst = new PercentileFunctionInst();
         inst.accept(
-            MeterEntity.newService("service-test", Layer.GENERAL),
+            MeterEntity.newService("service-test"),
             new PercentileArgument(
                 valuesA,
                 RANKS
@@ -233,7 +227,7 @@ public class AvgHistogramPercentileFunctionTest {
         valuesA.setGroup("localhost:3306/swtest");
 
         inst.accept(
-            MeterEntity.newService("service-test", Layer.GENERAL),
+            MeterEntity.newService("service-test"),
             new PercentileArgument(
                 valuesB,
                 RANKS

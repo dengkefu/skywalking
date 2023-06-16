@@ -25,6 +25,4 @@ public class LALConfig {
     private String name;
 
     private String dsl;
-
-    private String layer;
 }

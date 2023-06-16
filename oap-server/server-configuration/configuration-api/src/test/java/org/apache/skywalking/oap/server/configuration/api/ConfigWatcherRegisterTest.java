@@ -18,31 +18,30 @@
 
 package org.apache.skywalking.oap.server.configuration.api;
 
-import org.apache.skywalking.oap.server.library.module.ModuleDefine;
-import org.apache.skywalking.oap.server.library.module.ModuleProvider;
-import org.apache.skywalking.oap.server.library.module.ModuleStartException;
-import org.apache.skywalking.oap.server.library.module.ServiceNotProvidedException;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.powermock.reflect.Whitebox;
-
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.apache.skywalking.oap.server.library.module.ModuleConfig;
+import org.apache.skywalking.oap.server.library.module.ModuleDefine;
+import org.apache.skywalking.oap.server.library.module.ModuleProvider;
+import org.apache.skywalking.oap.server.library.module.ModuleStartException;
+import org.apache.skywalking.oap.server.library.module.ServiceNotProvidedException;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.powermock.reflect.Whitebox;
 
 public class ConfigWatcherRegisterTest {
     private ConfigWatcherRegister register;
 
-    @BeforeEach
+    @Before
     public void setup() {
         register = new MockConfigWatcherRegister();
     }
 
-    @AfterEach
+    @After
     public void tearDown() {
         register = null;
     }
@@ -65,7 +64,7 @@ public class ConfigWatcherRegisterTest {
 
         register.configSync();
 
-        assertEquals("abc2", newValue[0]);
+        Assert.assertEquals("abc2", newValue[0]);
     }
 
     @Test
@@ -88,8 +87,8 @@ public class ConfigWatcherRegisterTest {
 
         register.configSync();
 
-        assertEquals("abc", config.get("item1"));
-        assertEquals("abc2", config.get("item2"));
+        Assert.assertEquals("abc", config.get("item1"));
+        Assert.assertEquals("abc2", config.get("item2"));
     }
 
     @Test
@@ -124,8 +123,8 @@ public class ConfigWatcherRegisterTest {
         String expected = "Following dynamic config items are available." + ConfigWatcherRegister.LINE_SEPARATOR + "---------------------------------------------" + ConfigWatcherRegister.LINE_SEPARATOR + "key:MockModule.provider.prop2    module:MockModule    provider:provider    value(current):null" + ConfigWatcherRegister.LINE_SEPARATOR;
         String groupConfigExpected = "Following dynamic config items are available." + ConfigWatcherRegister.LINE_SEPARATOR + "---------------------------------------------" + ConfigWatcherRegister.LINE_SEPARATOR + "key:MockModule.provider.groupItems1    module:MockModule    provider:provider    groupItems(current):null" + ConfigWatcherRegister.LINE_SEPARATOR;
 
-        assertEquals(expected, registerTable.toString());
-        assertEquals(groupConfigExpected, groupRegisterTable.toString());
+        Assert.assertEquals(expected, registerTable.toString());
+        Assert.assertEquals(groupConfigExpected, groupRegisterTable.toString());
     }
 
     public static class MockConfigWatcherRegister extends ConfigWatcherRegister {
@@ -184,7 +183,7 @@ public class ConfigWatcherRegisterTest {
         }
 
         @Override
-        public ConfigCreator newConfigCreator() {
+        public ModuleConfig createConfigBeanIfAbsent() {
             return null;
         }
 

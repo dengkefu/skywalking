@@ -22,7 +22,7 @@ public enum Language {
     UNKNOWN, JAVA, DOTNET, NODEJS, PYTHON, RUBY, GO, LUA, PHP;
 
     public static Language value(String language) {
-        switch (language.toLowerCase()) {
+        switch (language) {
             case "java":
                 return Language.JAVA;
             case ".net":

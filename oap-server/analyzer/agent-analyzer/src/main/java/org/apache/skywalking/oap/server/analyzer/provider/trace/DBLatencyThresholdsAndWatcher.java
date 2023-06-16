@@ -20,7 +20,6 @@ package org.apache.skywalking.oap.server.analyzer.provider.trace;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.skywalking.oap.server.analyzer.module.AnalyzerModule;
 import org.apache.skywalking.oap.server.configuration.api.ConfigChangeWatcher;
@@ -57,7 +56,7 @@ public class DBLatencyThresholdsAndWatcher extends ConfigChangeWatcher {
         if (thresholds.get().containsKey(type)) {
             return thresholds.get().get(type);
         } else {
-            return Optional.ofNullable(thresholds.get().get("default")).orElse(Integer.MAX_VALUE);
+            return thresholds.get().get("default");
         }
     }
 

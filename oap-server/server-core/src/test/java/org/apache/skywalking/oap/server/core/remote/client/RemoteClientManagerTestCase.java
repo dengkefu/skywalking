@@ -18,6 +18,13 @@
 
 package org.apache.skywalking.oap.server.core.remote.client;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.skywalking.oap.server.core.CoreModule;
 import org.apache.skywalking.oap.server.core.cluster.ClusterModule;
@@ -28,18 +35,10 @@ import org.apache.skywalking.oap.server.telemetry.api.GaugeMetrics;
 import org.apache.skywalking.oap.server.telemetry.api.MetricsCreator;
 import org.apache.skywalking.oap.server.testing.module.ModuleDefineTesting;
 import org.apache.skywalking.oap.server.testing.module.ModuleManagerTesting;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.mockito.internal.verification.AtLeast;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
@@ -53,7 +52,7 @@ public class RemoteClientManagerTestCase {
     private RemoteClientManager clientManager;
     private ClusterNodesQuery clusterNodesQuery;
 
-    @BeforeEach
+    @Before
     public void setup() {
         ModuleManagerTesting moduleManager = new ModuleManagerTesting();
         ModuleDefineTesting clusterModuleDefine = new ModuleDefineTesting();
@@ -110,27 +109,27 @@ public class RemoteClientManagerTestCase {
         clientManager.refresh();
 
         List<RemoteClient> remoteClients = clientManager.getRemoteClient();
-        Assertions.assertEquals("host1", remoteClients.get(0).getAddress().getHost());
-        Assertions.assertEquals("host2", remoteClients.get(1).getAddress().getHost());
-        Assertions.assertEquals("host3", remoteClients.get(2).getAddress().getHost());
+        Assert.assertEquals("host1", remoteClients.get(0).getAddress().getHost());
+        Assert.assertEquals("host2", remoteClients.get(1).getAddress().getHost());
+        Assert.assertEquals("host3", remoteClients.get(2).getAddress().getHost());
 
-        Assertions.assertTrue(remoteClients.get(0) instanceof GRPCRemoteClient);
-        Assertions.assertTrue(remoteClients.get(1) instanceof SelfRemoteClient);
-        Assertions.assertTrue(remoteClients.get(2) instanceof GRPCRemoteClient);
+        Assert.assertTrue(remoteClients.get(0) instanceof GRPCRemoteClient);
+        Assert.assertTrue(remoteClients.get(1) instanceof SelfRemoteClient);
+        Assert.assertTrue(remoteClients.get(2) instanceof GRPCRemoteClient);
 
         when(clusterNodesQuery.queryRemoteNodes()).thenReturn(groupTwoInstances());
         clientManager.refresh();
 
         remoteClients = clientManager.getRemoteClient();
-        Assertions.assertEquals("host1", remoteClients.get(0).getAddress().getHost());
-        Assertions.assertEquals("host2", remoteClients.get(1).getAddress().getHost());
-        Assertions.assertEquals("host4", remoteClients.get(2).getAddress().getHost());
-        Assertions.assertEquals("host5", remoteClients.get(3).getAddress().getHost());
+        Assert.assertEquals("host1", remoteClients.get(0).getAddress().getHost());
+        Assert.assertEquals("host2", remoteClients.get(1).getAddress().getHost());
+        Assert.assertEquals("host4", remoteClients.get(2).getAddress().getHost());
+        Assert.assertEquals("host5", remoteClients.get(3).getAddress().getHost());
 
-        Assertions.assertTrue(remoteClients.get(0) instanceof GRPCRemoteClient);
-        Assertions.assertTrue(remoteClients.get(1) instanceof SelfRemoteClient);
-        Assertions.assertTrue(remoteClients.get(2) instanceof GRPCRemoteClient);
-        Assertions.assertTrue(remoteClients.get(3) instanceof GRPCRemoteClient);
+        Assert.assertTrue(remoteClients.get(0) instanceof GRPCRemoteClient);
+        Assert.assertTrue(remoteClients.get(1) instanceof SelfRemoteClient);
+        Assert.assertTrue(remoteClients.get(2) instanceof GRPCRemoteClient);
+        Assert.assertTrue(remoteClients.get(3) instanceof GRPCRemoteClient);
     }
 
     private List<RemoteInstance> groupOneInstances() {
@@ -173,7 +172,7 @@ public class RemoteClientManagerTestCase {
                 int i = 0;
                 cyclicBarrier.await();
                 while (!refreshFuture.isDone()) {
-                    Assertions.assertFalse(this.clientManager.getRemoteClient().isEmpty());
+                    Assert.assertFalse(this.clientManager.getRemoteClient().isEmpty());
                     log.debug("thread {} invoke {} times", Thread.currentThread().getName(), i++);
                 }
             } catch (InterruptedException | BrokenBarrierException e) {
@@ -185,7 +184,7 @@ public class RemoteClientManagerTestCase {
             int i = 0;
             cyclicBarrier.await();
             while (!refreshFuture.isDone()) {
-                Assertions.assertFalse(this.clientManager.getRemoteClient().isEmpty());
+                Assert.assertFalse(this.clientManager.getRemoteClient().isEmpty());
                 log.debug("thread {} invoke {} times", Thread.currentThread().getName(), i++);
             }
         } catch (InterruptedException | BrokenBarrierException e) {
@@ -205,9 +204,9 @@ public class RemoteClientManagerTestCase {
         this.clientManager.refresh();
         final List<RemoteClient> gotGroupTwoInstances = this.clientManager.getRemoteClient();
 
-        Assertions.assertEquals(gotGroupOneInstances.size(), groupOneInstances().size());
-        Assertions.assertEquals(gotGroupTwoInstances.size(), groupTwoInstances().size());
-        Assertions.assertNotEquals(gotGroupOneInstances.size(), gotGroupTwoInstances.size());
+        Assert.assertEquals(gotGroupOneInstances.size(), groupOneInstances().size());
+        Assert.assertEquals(gotGroupTwoInstances.size(), groupTwoInstances().size());
+        Assert.assertNotEquals(gotGroupOneInstances.size(), gotGroupTwoInstances.size());
     }
 
     @Test
@@ -222,7 +221,7 @@ public class RemoteClientManagerTestCase {
 
         List<RemoteClient> newGroupOneRemoteClients = clientManager.getRemoteClient();
 
-        Assertions.assertArrayEquals(groupOneRemoteClients.toArray(), newGroupOneRemoteClients.toArray());
+        Assert.assertArrayEquals(groupOneRemoteClients.toArray(), newGroupOneRemoteClients.toArray());
     }
 
     @Test
@@ -239,7 +238,7 @@ public class RemoteClientManagerTestCase {
 
         List<RemoteClient> newGroupOneRemoteClients = clientManager.getRemoteClient();
 
-        Assertions.assertEquals(groupOneRemoteClients.get(0).getAddress(), newGroupOneRemoteClients.get(0).getAddress());
-        Assertions.assertEquals(newGroupOneRemoteClients.get(3).getAddress().getHost(), "host4");
+        Assert.assertEquals(groupOneRemoteClients.get(0).getAddress(), newGroupOneRemoteClients.get(0).getAddress());
+        Assert.assertEquals(newGroupOneRemoteClients.get(3).getAddress().getHost(), "host4");
     }
 }

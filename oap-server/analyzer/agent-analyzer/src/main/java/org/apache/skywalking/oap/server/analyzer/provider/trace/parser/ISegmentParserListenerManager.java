@@ -20,10 +20,6 @@ package org.apache.skywalking.oap.server.analyzer.provider.trace.parser;
 
 import org.apache.skywalking.oap.server.analyzer.provider.trace.parser.listener.AnalysisListenerFactory;
 
-import java.util.List;
-
 public interface ISegmentParserListenerManager {
     void add(AnalysisListenerFactory analysisListenerFactory);
-
-    List<AnalysisListenerFactory> getSpanListenerFactories();
 }

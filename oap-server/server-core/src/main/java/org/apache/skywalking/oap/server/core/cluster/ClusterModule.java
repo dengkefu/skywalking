@@ -32,8 +32,7 @@ public class ClusterModule extends ModuleDefine {
     public Class[] services() {
         return new Class[] {
             ClusterRegister.class,
-            ClusterNodesQuery.class,
-            ClusterCoordinator.class
+            ClusterNodesQuery.class
         };
     }
 }

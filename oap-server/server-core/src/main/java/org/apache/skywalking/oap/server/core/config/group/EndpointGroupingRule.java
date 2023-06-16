@@ -20,14 +20,11 @@ package org.apache.skywalking.oap.server.core.config.group;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.skywalking.oap.server.core.config.group.uri.quickmatch.QuickUriGroupingRule;
 import org.apache.skywalking.oap.server.library.util.StringFormatGroup;
 
 /**
  * Endpoint group rule hosts all group rules of all services.
- * Regex grouping has been replaced by {@link QuickUriGroupingRule}
  */
-@Deprecated
 public class EndpointGroupingRule {
     private Map<String, StringFormatGroup> rules = new HashMap<>();
 
@@ -38,7 +35,7 @@ public class EndpointGroupingRule {
      * @param endpointGroupName represents the logic endpoint name.
      * @param ruleRegex         match the endpoints which should be in the group name.
      */
-    public void addRule(String serviceName, String endpointGroupName, String ruleRegex) {
+    void addRule(String serviceName, String endpointGroupName, String ruleRegex) {
         final StringFormatGroup formatGroup = rules.computeIfAbsent(serviceName, name -> new StringFormatGroup());
         formatGroup.addRule(endpointGroupName, ruleRegex);
     }

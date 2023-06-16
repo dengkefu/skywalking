@@ -18,16 +18,6 @@
 
 package org.apache.skywalking.oap.server.configuration.configmap;
 
-import org.apache.skywalking.oap.server.configuration.api.ConfigTable;
-import org.apache.skywalking.oap.server.configuration.api.GroupConfigTable;
-import org.apache.skywalking.oap.server.library.util.ResourceUtils;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.yaml.snakeyaml.Yaml;
-
 import java.io.FileNotFoundException;
 import java.io.Reader;
 import java.util.HashMap;
@@ -37,11 +27,22 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.apache.skywalking.oap.server.configuration.api.ConfigTable;
+import org.apache.skywalking.oap.server.configuration.api.GroupConfigTable;
+import org.apache.skywalking.oap.server.library.util.ResourceUtils;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+import org.yaml.snakeyaml.Yaml;
 
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-
-@ExtendWith(MockitoExtension.class)
+@RunWith(PowerMockRunner.class)
+@PowerMockIgnore({"com.sun.org.apache.xerces.*", "javax.xml.*", "org.xml.*", "javax.management.*", "org.w3c.*"})
+@PrepareForTest({ConfigurationConfigmapInformer.class})
 public class ConfigmapConfigWatcherRegisterTest {
 
     private ConfigmapConfigurationWatcherRegister register;
@@ -50,107 +51,107 @@ public class ConfigmapConfigWatcherRegisterTest {
 
     private final Yaml yaml = new Yaml();
 
-    @BeforeEach
-    public void prepare() {
+    @Before
+    public void prepare() throws IllegalAccessException {
         ConfigmapConfigurationSettings settings = new ConfigmapConfigurationSettings();
         settings.setPeriod(60);
-        informer = mock(ConfigurationConfigmapInformer.class);
+        informer = PowerMockito.mock(ConfigurationConfigmapInformer.class);
         register = new ConfigmapConfigurationWatcherRegister(settings, informer);
     }
 
     @Test
-    public void readConfigWhenConfigMapDataIsNull() {
+    public void readConfigWhenConfigMapDataIsNull() throws Exception {
         Map<String, String> configMapData = new HashMap<>();
-        doReturn(configMapData).when(informer).configMapData();
+        PowerMockito.doReturn(configMapData).when(informer).configMapData();
         Optional<ConfigTable> optionalConfigTable = register.readConfig(new HashSet<String>() {{
             add("key1");
         }});
 
-        Assertions.assertTrue(optionalConfigTable.isPresent());
+        Assert.assertTrue(optionalConfigTable.isPresent());
         ConfigTable configTable = optionalConfigTable.get();
-        Assertions.assertEquals(configTable.getItems().size(), 1);
-        Assertions.assertEquals(configTable.getItems().get(0).getName(), "key1");
-        Assertions.assertNull(configTable.getItems().get(0).getValue());
+        Assert.assertEquals(configTable.getItems().size(), 1);
+        Assert.assertEquals(configTable.getItems().get(0).getName(), "key1");
+        Assert.assertNull(configTable.getItems().get(0).getValue());
     }
 
     @Test
     public void readConfigWhenInformerNotwork() throws Exception {
-        doReturn(new HashMap<>()).when(informer).configMapData();
+        PowerMockito.doReturn(new HashMap<>()).when(informer).configMapData();
         Optional<ConfigTable> optionalConfigTable = register.readConfig(new HashSet<String>() {{
             add("key1");
         }});
 
-        Assertions.assertTrue(optionalConfigTable.isPresent());
+        Assert.assertTrue(optionalConfigTable.isPresent());
         ConfigTable configTable = optionalConfigTable.get();
-        Assertions.assertEquals(configTable.getItems().size(), 1);
-        Assertions.assertEquals(configTable.getItems().get(0).getName(), "key1");
-        Assertions.assertNull(configTable.getItems().get(0).getValue());
+        Assert.assertEquals(configTable.getItems().size(), 1);
+        Assert.assertEquals(configTable.getItems().get(0).getName(), "key1");
+        Assert.assertNull(configTable.getItems().get(0).getValue());
     }
 
     @Test
     public void readConfigWhenInformerWork() throws Exception {
         Map<String, String> configMapData = this.readMockConfigMapData();
-        doReturn(configMapData).when(informer).configMapData();
+        PowerMockito.doReturn(configMapData).when(informer).configMapData();
         Optional<ConfigTable> optionalConfigTable = register.readConfig(new HashSet<String>() {{
-            add("agent-analyzer.default.slowDBAccessThreshold");
+            add("receiver-trace.default.slowDBAccessThreshold");
             add("alarm.default.alarm-settings");
             add("core.default.apdexThreshold");
-            add("agent-analyzer.default.uninstrumentedGateways");
+            add("receiver-trace.default.uninstrumentedGateways");
         }});
 
-        Assertions.assertTrue(optionalConfigTable.isPresent());
+        Assert.assertTrue(optionalConfigTable.isPresent());
         ConfigTable configTable = optionalConfigTable.get();
 
         List<String> list = configTable.getItems().stream()
                                        .map(ConfigTable.ConfigItem::getValue)
                                        .filter(Objects::nonNull)
                                        .collect(Collectors.toList());
-        Assertions.assertEquals(list.size(), 4);
+        Assert.assertEquals(list.size(), 4);
     }
 
     @Test
     public void readGroupConfigWhenConfigMapDataIsNull() throws Exception {
         Map<String, String> configMapData = new HashMap<>();
-        doReturn(configMapData).when(informer).configMapData();
+        PowerMockito.doReturn(configMapData).when(informer).configMapData();
         Optional<GroupConfigTable> optionalGroupConfigTable = register.readGroupConfig(new HashSet<String>() {{
             add("key1");
         }});
 
-        Assertions.assertTrue(optionalGroupConfigTable.isPresent());
+        Assert.assertTrue(optionalGroupConfigTable.isPresent());
         GroupConfigTable groupConfigTable = optionalGroupConfigTable.get();
-        Assertions.assertEquals(groupConfigTable.getGroupItems().size(), 1);
-        Assertions.assertEquals(groupConfigTable.getGroupItems().get(0).getName(), "key1");
-        Assertions.assertEquals(groupConfigTable.getGroupItems().get(0).getItems().size(), 0);
+        Assert.assertEquals(groupConfigTable.getGroupItems().size(), 1);
+        Assert.assertEquals(groupConfigTable.getGroupItems().get(0).getName(), "key1");
+        Assert.assertEquals(groupConfigTable.getGroupItems().get(0).getItems().size(), 0);
     }
 
     @Test
     public void readGroupConfigWhenInformerNotwork() throws Exception {
-        doReturn(new HashMap<>()).when(informer).configMapData();
+        PowerMockito.doReturn(new HashMap<>()).when(informer).configMapData();
         Optional<GroupConfigTable> optionalGroupConfigTable = register.readGroupConfig(new HashSet<String>() {{
             add("key1");
         }});
 
-        Assertions.assertTrue(optionalGroupConfigTable.isPresent());
+        Assert.assertTrue(optionalGroupConfigTable.isPresent());
         GroupConfigTable groupConfigTable = optionalGroupConfigTable.get();
-        Assertions.assertEquals(groupConfigTable.getGroupItems().size(), 1);
-        Assertions.assertEquals(groupConfigTable.getGroupItems().get(0).getName(), "key1");
-        Assertions.assertEquals(groupConfigTable.getGroupItems().get(0).getItems().size(), 0);
+        Assert.assertEquals(groupConfigTable.getGroupItems().size(), 1);
+        Assert.assertEquals(groupConfigTable.getGroupItems().get(0).getName(), "key1");
+        Assert.assertEquals(groupConfigTable.getGroupItems().get(0).getItems().size(), 0);
     }
 
     @Test
     public void readGroupConfigWhenInformerWork() throws Exception {
         Map<String, String> configMapData = this.readMockConfigMapData();
-        doReturn(configMapData).when(informer).configMapData();
+        PowerMockito.doReturn(configMapData).when(informer).configMapData();
         Optional<GroupConfigTable> optionalGroupConfigTable = register.readGroupConfig(new HashSet<String>() {{
             add("core.default.endpoint-name-grouping-openapi");
         }});
 
-        Assertions.assertTrue(optionalGroupConfigTable.isPresent());
+        Assert.assertTrue(optionalGroupConfigTable.isPresent());
         GroupConfigTable groupConfigTable = optionalGroupConfigTable.get();
 
-        Assertions.assertEquals(groupConfigTable.getGroupItems().size(), 1);
-        Assertions.assertEquals(groupConfigTable.getGroupItems().get(0).getName(), "core.default.endpoint-name-grouping-openapi");
-        Assertions.assertEquals(groupConfigTable.getGroupItems().get(0).getItems().size(), 3);
+        Assert.assertEquals(groupConfigTable.getGroupItems().size(), 1);
+        Assert.assertEquals(groupConfigTable.getGroupItems().get(0).getName(), "core.default.endpoint-name-grouping-openapi");
+        Assert.assertEquals(groupConfigTable.getGroupItems().get(0).getItems().size(), 3);
     }
 
     private Map<String, String> readMockConfigMapData() throws FileNotFoundException {

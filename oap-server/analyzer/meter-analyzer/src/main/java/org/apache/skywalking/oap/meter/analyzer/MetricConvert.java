@@ -26,11 +26,6 @@ import java.util.List;
 import java.util.StringJoiner;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.skywalking.oap.meter.analyzer.dsl.DSL;
-import org.apache.skywalking.oap.meter.analyzer.dsl.Expression;
-import org.apache.skywalking.oap.meter.analyzer.dsl.ExpressionParsingException;
-import org.apache.skywalking.oap.meter.analyzer.dsl.Result;
 import org.apache.skywalking.oap.meter.analyzer.dsl.SampleFamily;
 import org.apache.skywalking.oap.server.core.analysis.meter.MeterSystem;
 
@@ -53,45 +48,15 @@ public class MetricConvert {
 
     public MetricConvert(MetricRuleConfig rule, MeterSystem service) {
         Preconditions.checkState(!Strings.isNullOrEmpty(rule.getMetricPrefix()));
-        // init expression script
-        if (StringUtils.isNotEmpty(rule.getInitExp())) {
-            handleInitExp(rule.getInitExp());
-        }
         this.analyzers = rule.getMetricsRules().stream().map(
-            r -> buildAnalyzer(
+            r -> Analyzer.build(
                 formatMetricName(rule, r.getName()),
                 rule.getFilter(),
-                formatExp(rule.getExpPrefix(), rule.getExpSuffix(), r.getExp()),
+                Strings.isNullOrEmpty(rule.getExpSuffix()) ?
+                    r.getExp() : String.format("(%s).%s", r.getExp(), rule.getExpSuffix()),
                 service
             )
         ).collect(toList());
-    }
-
-    Analyzer buildAnalyzer(final String metricsName,
-                           final String filter,
-                           final String exp,
-                           final MeterSystem service) {
-        return Analyzer.build(
-            metricsName,
-            filter,
-            exp,
-            service
-        );
-    }
-
-    private String formatExp(final String expPrefix, String expSuffix, String exp) {
-        String ret = exp;
-        if (!Strings.isNullOrEmpty(expPrefix)) {
-            ret = String.format("(%s.%s)", StringUtils.substringBefore(exp, "."), expPrefix);
-            final String after = StringUtils.substringAfter(exp, ".");
-            if (!Strings.isNullOrEmpty(after)) {
-                ret = String.format("(%s.%s)", ret, after);
-            }
-        }
-        if (!Strings.isNullOrEmpty(expSuffix)) {
-            ret = String.format("(%s).%s", ret, expSuffix);
-        }
-        return ret;
     }
 
     /**
@@ -117,14 +82,5 @@ public class MetricConvert {
         StringJoiner metricName = new StringJoiner("_");
         metricName.add(rule.getMetricPrefix()).add(meterRuleName);
         return metricName.toString();
-    }
-
-    private void handleInitExp(String exp) {
-        Expression e = DSL.parse(exp);
-        final Result result = e.run(ImmutableMap.of());
-        if (!result.isSuccess() && result.isThrowable()) {
-            throw new ExpressionParsingException(
-                "failed to execute init expression: " + exp + ", error:" + result.getError());
-        }
     }
 }

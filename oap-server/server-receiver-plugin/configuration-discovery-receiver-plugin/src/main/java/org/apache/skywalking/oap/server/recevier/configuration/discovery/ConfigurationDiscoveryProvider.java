@@ -21,6 +21,7 @@ package org.apache.skywalking.oap.server.recevier.configuration.discovery;
 import org.apache.skywalking.oap.server.configuration.api.ConfigurationModule;
 import org.apache.skywalking.oap.server.configuration.api.DynamicConfigurationService;
 import org.apache.skywalking.oap.server.core.server.GRPCHandlerRegister;
+import org.apache.skywalking.oap.server.library.module.ModuleConfig;
 import org.apache.skywalking.oap.server.library.module.ModuleDefine;
 import org.apache.skywalking.oap.server.library.module.ModuleProvider;
 import org.apache.skywalking.oap.server.library.module.ModuleStartException;
@@ -43,19 +44,13 @@ public class ConfigurationDiscoveryProvider extends ModuleProvider {
         return ConfigurationDiscoveryModule.class;
     }
 
-    @Override
-    public ConfigCreator newConfigCreator() {
-        return new ConfigCreator<ConfigurationDiscoveryModuleConfig>() {
-            @Override
-            public Class type() {
-                return ConfigurationDiscoveryModuleConfig.class;
-            }
+    public ConfigurationDiscoveryProvider() {
+        configurationDiscoveryModuleConfig = new ConfigurationDiscoveryModuleConfig();
+    }
 
-            @Override
-            public void onInitialized(final ConfigurationDiscoveryModuleConfig initialized) {
-                configurationDiscoveryModuleConfig = initialized;
-            }
-        };
+    @Override
+    public ModuleConfig createConfigBeanIfAbsent() {
+        return configurationDiscoveryModuleConfig;
     }
 
     @Override

@@ -18,8 +18,18 @@
 
 package org.apache.skywalking.oap.server.core.analysis.meter.function;
 
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.IntStream;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.skywalking.oap.server.core.Const;
 import org.apache.skywalking.oap.server.core.UnexpectedException;
-import org.apache.skywalking.oap.server.core.analysis.meter.Meter;
 import org.apache.skywalking.oap.server.core.analysis.meter.MeterEntity;
 import org.apache.skywalking.oap.server.core.analysis.metrics.DataTable;
 import org.apache.skywalking.oap.server.core.analysis.metrics.IntList;
@@ -28,21 +38,8 @@ import org.apache.skywalking.oap.server.core.analysis.metrics.MultiIntValuesHold
 import org.apache.skywalking.oap.server.core.analysis.metrics.PercentileMetrics;
 import org.apache.skywalking.oap.server.core.query.type.Bucket;
 import org.apache.skywalking.oap.server.core.remote.grpc.proto.RemoteData;
-import org.apache.skywalking.oap.server.core.storage.StorageID;
-import org.apache.skywalking.oap.server.core.storage.annotation.BanyanDB;
+import org.apache.skywalking.oap.server.core.storage.StorageHashMapBuilder;
 import org.apache.skywalking.oap.server.core.storage.annotation.Column;
-import org.apache.skywalking.oap.server.core.storage.annotation.ElasticSearch;
-import org.apache.skywalking.oap.server.core.storage.type.Convert2Entity;
-import org.apache.skywalking.oap.server.core.storage.type.Convert2Storage;
-import org.apache.skywalking.oap.server.core.storage.type.StorageBuilder;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.IntStream;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * PercentileFunction is the implementation of {@link PercentileMetrics} in the meter system. The major difference is
@@ -50,34 +47,29 @@ import lombok.extern.slf4j.Slf4j;
  */
 @MeterFunction(functionName = "percentile")
 @Slf4j
-public abstract class PercentileFunction extends Meter implements AcceptableValue<PercentileFunction.PercentileArgument>, MultiIntValuesHolder {
+public abstract class PercentileFunction extends Metrics implements AcceptableValue<PercentileFunction.PercentileArgument>, MultiIntValuesHolder {
     public static final String DATASET = "dataset";
     public static final String RANKS = "ranks";
-    public static final String VALUE = "datatable_value";
+    public static final String VALUE = "value";
 
     @Setter
     @Getter
-    @Column(name = ENTITY_ID, length = 512)
-    @BanyanDB.SeriesID(index = 0)
+    @Column(columnName = ENTITY_ID, length = 512)
     private String entityId;
     @Getter
     @Setter
-    @Column(name = VALUE, dataType = Column.ValueDataType.LABELED_VALUE, storageOnly = true)
-    @ElasticSearch.Column(legacyName = "value")
-    @BanyanDB.MeasureField
+    @Column(columnName = VALUE, dataType = Column.ValueDataType.LABELED_VALUE, storageOnly = true)
     private DataTable percentileValues = new DataTable(10);
     @Getter
     @Setter
-    @Column(name = DATASET, storageOnly = true)
-    @BanyanDB.MeasureField
+    @Column(columnName = DATASET, storageOnly = true)
     private DataTable dataset = new DataTable(30);
     /**
      * Rank
      */
     @Getter
     @Setter
-    @Column(name = RANKS, storageOnly = true)
-    @BanyanDB.MeasureField
+    @Column(columnName = RANKS, storageOnly = true)
     private IntList ranks = new IntList(10);
 
     private boolean isCalculated = false;
@@ -254,14 +246,12 @@ public abstract class PercentileFunction extends Meter implements AcceptableValu
     }
 
     @Override
-    protected StorageID id0() {
-        return new StorageID()
-            .append(TIME_BUCKET, getTimeBucket())
-            .append(ENTITY_ID, getEntityId());
+    protected String id0() {
+        return getTimeBucket() + Const.ID_CONNECTOR + entityId;
     }
 
     @Override
-    public Class<? extends StorageBuilder> builder() {
+    public Class<? extends StorageHashMapBuilder> builder() {
         return PercentileFunctionBuilder.class;
     }
 
@@ -272,30 +262,33 @@ public abstract class PercentileFunction extends Meter implements AcceptableValu
         private final int[] ranks;
     }
 
-    public static class PercentileFunctionBuilder implements StorageBuilder<PercentileFunction> {
+    public static class PercentileFunctionBuilder implements StorageHashMapBuilder<PercentileFunction> {
+
         @Override
-        public PercentileFunction storage2Entity(final Convert2Entity converter) {
+        public PercentileFunction storage2Entity(final Map<String, Object> dbMap) {
             PercentileFunction metrics = new PercentileFunction() {
                 @Override
                 public AcceptableValue<PercentileArgument> createNew() {
                     throw new UnexpectedException("createNew should not be called");
                 }
             };
-            metrics.setDataset(new DataTable((String) converter.get(DATASET)));
-            metrics.setRanks(new IntList((String) converter.get(RANKS)));
-            metrics.setPercentileValues(new DataTable((String) converter.get(VALUE)));
-            metrics.setTimeBucket(((Number) converter.get(TIME_BUCKET)).longValue());
-            metrics.setEntityId((String) converter.get(ENTITY_ID));
+            metrics.setDataset(new DataTable((String) dbMap.get(DATASET)));
+            metrics.setRanks(new IntList((String) dbMap.get(RANKS)));
+            metrics.setPercentileValues(new DataTable((String) dbMap.get(VALUE)));
+            metrics.setTimeBucket(((Number) dbMap.get(TIME_BUCKET)).longValue());
+            metrics.setEntityId((String) dbMap.get(ENTITY_ID));
             return metrics;
         }
 
         @Override
-        public void entity2Storage(final PercentileFunction storageData, final Convert2Storage converter) {
-            converter.accept(DATASET, storageData.getDataset());
-            converter.accept(RANKS, storageData.getRanks());
-            converter.accept(VALUE, storageData.getPercentileValues());
-            converter.accept(TIME_BUCKET, storageData.getTimeBucket());
-            converter.accept(ENTITY_ID, storageData.getEntityId());
+        public Map<String, Object> entity2Storage(final PercentileFunction storageData) {
+            Map<String, Object> map = new HashMap<>();
+            map.put(DATASET, storageData.getDataset());
+            map.put(RANKS, storageData.getRanks());
+            map.put(VALUE, storageData.getPercentileValues());
+            map.put(TIME_BUCKET, storageData.getTimeBucket());
+            map.put(ENTITY_ID, storageData.getEntityId());
+            return map;
         }
     }
 

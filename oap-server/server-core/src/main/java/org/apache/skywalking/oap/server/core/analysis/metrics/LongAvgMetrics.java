@@ -25,7 +25,6 @@ import org.apache.skywalking.oap.server.core.analysis.metrics.annotation.Entranc
 import org.apache.skywalking.oap.server.core.analysis.metrics.annotation.MetricsFunction;
 import org.apache.skywalking.oap.server.core.analysis.metrics.annotation.SourceFrom;
 import org.apache.skywalking.oap.server.core.query.sql.Function;
-import org.apache.skywalking.oap.server.core.storage.annotation.BanyanDB;
 import org.apache.skywalking.oap.server.core.storage.annotation.Column;
 
 @MetricsFunction(functionName = "longAvg")
@@ -37,18 +36,15 @@ public abstract class LongAvgMetrics extends Metrics implements LongValueHolder 
 
     @Getter
     @Setter
-    @Column(name = SUMMATION, storageOnly = true)
-    @BanyanDB.MeasureField
+    @Column(columnName = SUMMATION, storageOnly = true)
     protected long summation;
     @Getter
     @Setter
-    @Column(name = COUNT, storageOnly = true)
-    @BanyanDB.MeasureField
+    @Column(columnName = COUNT, storageOnly = true)
     protected long count;
     @Getter
     @Setter
-    @Column(name = VALUE, dataType = Column.ValueDataType.COMMON_VALUE, function = Function.Avg)
-    @BanyanDB.MeasureField
+    @Column(columnName = VALUE, dataType = Column.ValueDataType.COMMON_VALUE, function = Function.Avg)
     private long value;
 
     @Entrance
@@ -67,5 +63,15 @@ public abstract class LongAvgMetrics extends Metrics implements LongValueHolder 
     @Override
     public final void calculate() {
         this.value = this.summation / this.count;
+    }
+
+    @Override
+    public boolean haveDefault() {
+        return true;
+    }
+
+    @Override
+    public boolean isDefaultValue() {
+        return value == 0;
     }
 }

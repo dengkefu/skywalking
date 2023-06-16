@@ -22,8 +22,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.skywalking.library.elasticsearch.requests.search.Query;
 import org.apache.skywalking.library.elasticsearch.requests.search.RangeQueryBuilder;
@@ -31,12 +29,11 @@ import org.apache.skywalking.library.elasticsearch.requests.search.Search;
 import org.apache.skywalking.library.elasticsearch.requests.search.SearchBuilder;
 import org.apache.skywalking.library.elasticsearch.requests.search.aggregation.Aggregation;
 import org.apache.skywalking.library.elasticsearch.requests.search.aggregation.TermsAggregationBuilder;
-import org.apache.skywalking.library.elasticsearch.response.Document;
-import org.apache.skywalking.library.elasticsearch.response.Documents;
 import org.apache.skywalking.library.elasticsearch.response.search.SearchHit;
 import org.apache.skywalking.library.elasticsearch.response.search.SearchHits;
 import org.apache.skywalking.library.elasticsearch.response.search.SearchResponse;
 import org.apache.skywalking.oap.server.core.analysis.metrics.DataTable;
+import org.apache.skywalking.oap.server.core.analysis.metrics.HistogramMetrics;
 import org.apache.skywalking.oap.server.core.analysis.metrics.Metrics;
 import org.apache.skywalking.oap.server.core.query.PointOfTime;
 import org.apache.skywalking.oap.server.core.query.input.Duration;
@@ -46,14 +43,11 @@ import org.apache.skywalking.oap.server.core.query.type.HeatMap;
 import org.apache.skywalking.oap.server.core.query.type.IntValues;
 import org.apache.skywalking.oap.server.core.query.type.KVInt;
 import org.apache.skywalking.oap.server.core.query.type.MetricsValues;
-import org.apache.skywalking.oap.server.core.query.type.NullableValue;
 import org.apache.skywalking.oap.server.core.storage.annotation.ValueColumnMetadata;
 import org.apache.skywalking.oap.server.core.storage.query.IMetricsQueryDAO;
 import org.apache.skywalking.oap.server.library.client.elasticsearch.ElasticSearchClient;
 import org.apache.skywalking.oap.server.storage.plugin.elasticsearch.base.EsDAO;
 import org.apache.skywalking.oap.server.storage.plugin.elasticsearch.base.IndexController;
-import org.apache.skywalking.oap.server.storage.plugin.elasticsearch.base.TimeRangeIndexNameGenerator;
-import org.apache.skywalking.oap.server.storage.plugin.elasticsearch.base.TimeSeriesUtils;
 
 public class MetricsQueryEsDAO extends EsDAO implements IMetricsQueryDAO {
 
@@ -62,88 +56,76 @@ public class MetricsQueryEsDAO extends EsDAO implements IMetricsQueryDAO {
     }
 
     @Override
-    public NullableValue readMetricsValue(final MetricsCondition condition,
-                                          final String valueColumnName,
-                                          final Duration duration) {
-        final String realValueColumn = IndexController.LogicIndicesRegister.getPhysicalColumnName(condition.getName(), valueColumnName);
+    public long readMetricsValue(final MetricsCondition condition,
+                                 final String valueColumnName,
+                                 final Duration duration) {
         final SearchBuilder sourceBuilder = buildQuery(condition, duration);
         int defaultValue = ValueColumnMetadata.INSTANCE.getDefaultValue(condition.getName());
         Function function = ValueColumnMetadata.INSTANCE.getValueFunction(condition.getName());
         if (function == Function.Latest) {
-            return readMetricsValues(condition, realValueColumn, duration)
+            return readMetricsValues(condition, valueColumnName, duration)
                 .getValues().latestValue(defaultValue);
         }
 
         final TermsAggregationBuilder entityIdAggregation =
             Aggregation.terms(Metrics.ENTITY_ID)
                        .field(Metrics.ENTITY_ID)
-                       .executionHint(TermsAggregationBuilder.ExecutionHint.MAP)
-                       .collectMode(TermsAggregationBuilder.CollectMode.BREADTH_FIRST)
                        .size(1);
-        functionAggregation(function, entityIdAggregation, realValueColumn);
+        functionAggregation(function, entityIdAggregation, valueColumnName);
 
         sourceBuilder.aggregation(entityIdAggregation);
 
-        final SearchResponse response = getClient().search(new TimeRangeIndexNameGenerator(
-            IndexController.LogicIndicesRegister.getPhysicalTableName(condition.getName()),
-            duration.getStartTimeBucketInSec(),
-            duration.getEndTimeBucketInSec()), sourceBuilder.build());
+        final String index =
+            IndexController.LogicIndicesRegister.getPhysicalTableName(condition.getName());
 
-        if (Objects.nonNull(response.getAggregations())) {
-            final Map<String, Object> idTerms =
-                (Map<String, Object>) response.getAggregations().get(Metrics.ENTITY_ID);
-            final List<Map<String, Object>> buckets =
-                (List<Map<String, Object>>) idTerms.get("buckets");
+        final SearchResponse response = getClient().search(index, sourceBuilder.build());
 
-            for (Map<String, Object> idBucket : buckets) {
-                final Map<String, Object> agg = (Map<String, Object>) idBucket.get(realValueColumn);
-                return new NullableValue(((Number) agg.get("value")).longValue(), false);
-            }
+        final Map<String, Object> idTerms =
+            (Map<String, Object>) response.getAggregations().get(Metrics.ENTITY_ID);
+        final List<Map<String, Object>> buckets =
+            (List<Map<String, Object>>) idTerms.get("buckets");
+
+        for (Map<String, Object> idBucket : buckets) {
+            final Map<String, Object> agg = (Map<String, Object>) idBucket.get(valueColumnName);
+            return ((Number) agg.get("value")).longValue();
         }
-        return new NullableValue(defaultValue, true);
+        return defaultValue;
     }
 
     @Override
     public MetricsValues readMetricsValues(final MetricsCondition condition,
                                            final String valueColumnName,
                                            final Duration duration) {
-        final String realValueColumn = IndexController.LogicIndicesRegister.getPhysicalColumnName(condition.getName(), valueColumnName);
         String tableName =
             IndexController.LogicIndicesRegister.getPhysicalTableName(condition.getName());
         final List<PointOfTime> pointOfTimes = duration.assembleDurationPoints();
-        Map<String, List<String>> indexIdsGroup = new HashMap<>();
-
         final List<String> ids = pointOfTimes.stream().map(pointOfTime -> {
             String id = pointOfTime.id(condition.getEntity().buildId());
-            if (IndexController.LogicIndicesRegister.isMergedTable(condition.getName())) {
+            if (IndexController.LogicIndicesRegister.isMetricTable(condition.getName())) {
                 id = IndexController.INSTANCE.generateDocId(condition.getName(), id);
             }
-            String indexName = TimeSeriesUtils.queryIndexName(
-                tableName, pointOfTime.getPoint(), duration.getStep(), false, false);
-            indexIdsGroup.computeIfAbsent(indexName, v -> new ArrayList<>()).add(id);
             return id;
         }).collect(Collectors.toList());
 
         MetricsValues metricsValues = new MetricsValues();
-        Optional<Documents> response = getClient().ids(indexIdsGroup);
-        if (response.isPresent()) {
-            Map<String, Map<String, Object>> idMap = toMap(response.get());
+
+        SearchResponse response = getClient().ids(tableName, ids);
+        if (!response.getHits().getHits().isEmpty()) {
+            Map<String, Map<String, Object>> idMap = toMap(response.getHits());
 
             // Label is null, because in readMetricsValues, no label parameter.
             IntValues intValues = metricsValues.getValues();
             for (String id : ids) {
                 KVInt kvInt = new KVInt();
                 kvInt.setId(id);
+                kvInt.setValue(0);
                 if (idMap.containsKey(id)) {
                     Map<String, Object> source = idMap.get(id);
-                    if (source.get(realValueColumn) != null) {
-                        kvInt.setValue(((Number) source.get(realValueColumn)).longValue());
-                    } else {
-                        kvInt.setValue(ValueColumnMetadata.INSTANCE.getDefaultValue(condition.getName()));
-                        kvInt.setEmptyValue(true);
-                    }
-                    intValues.addKVInt(kvInt);
+                    kvInt.setValue(((Number) source.getOrDefault(valueColumnName, 0)).longValue());
+                } else {
+                    kvInt.setValue(ValueColumnMetadata.INSTANCE.getDefaultValue(condition.getName()));
                 }
+                intValues.addKVInt(kvInt);
             }
         }
         metricsValues.setValues(
@@ -159,12 +141,9 @@ public class MetricsQueryEsDAO extends EsDAO implements IMetricsQueryDAO {
                                                         final String valueColumnName,
                                                         final List<String> labels,
                                                         final Duration duration) {
-        final String realValueColumn = IndexController.LogicIndicesRegister.getPhysicalColumnName(condition.getName(), valueColumnName);
         final List<PointOfTime> pointOfTimes = duration.assembleDurationPoints();
         String tableName =
             IndexController.LogicIndicesRegister.getPhysicalTableName(condition.getName());
-        Map<String, List<String>> indexIdsGroup = new HashMap<>();
-
         boolean aggregationMode = !tableName.equals(condition.getName());
         List<String> ids = new ArrayList<>(pointOfTimes.size());
         pointOfTimes.forEach(pointOfTime -> {
@@ -173,41 +152,29 @@ public class MetricsQueryEsDAO extends EsDAO implements IMetricsQueryDAO {
                 id = IndexController.INSTANCE.generateDocId(condition.getName(), id);
             }
             ids.add(id);
-            String indexName = TimeSeriesUtils.queryIndexName(
-                tableName, pointOfTime.getPoint(), duration.getStep(), false, false);
-            indexIdsGroup.computeIfAbsent(indexName, v -> new ArrayList<>()).add(id);
         });
 
-        Optional<Documents> response = getClient().ids(indexIdsGroup);
+        SearchResponse response = getClient().ids(tableName, ids);
         Map<String, DataTable> idMap = new HashMap<>();
 
-        if (response.isPresent()) {
-            for (final Document document : response.get()) {
-                if (document.getSource().get(realValueColumn) != null) {
-                    idMap.put(
-                        document.getId(),
-                        new DataTable((String) document.getSource().get(realValueColumn))
-                    );
-                }
+        if (!response.getHits().getHits().isEmpty()) {
+            for (final SearchHit hit : response.getHits()) {
+                idMap.put(
+                    hit.getId(),
+                    new DataTable((String) hit.getSource().getOrDefault(valueColumnName, ""))
+                );
             }
         }
-        return Util.sortValues(
-            Util.composeLabelValue(condition, labels, idMap),
-            ids,
-            ValueColumnMetadata.INSTANCE.getDefaultValue(condition.getName())
-        );
+        return Util.composeLabelValue(condition, labels, ids, idMap);
     }
 
     @Override
     public HeatMap readHeatMap(final MetricsCondition condition,
                                final String valueColumnName,
                                final Duration duration) {
-        final String realValueColumn = IndexController.LogicIndicesRegister.getPhysicalColumnName(condition.getName(), valueColumnName);
         final List<PointOfTime> pointOfTimes = duration.assembleDurationPoints();
         String tableName =
             IndexController.LogicIndicesRegister.getPhysicalTableName(condition.getName());
-        Map<String, List<String>> indexIdsGroup = new HashMap<>();
-
         boolean aggregationMode = !tableName.equals(condition.getName());
         List<String> ids = new ArrayList<>(pointOfTimes.size());
         pointOfTimes.forEach(pointOfTime -> {
@@ -216,24 +183,21 @@ public class MetricsQueryEsDAO extends EsDAO implements IMetricsQueryDAO {
                 id = IndexController.INSTANCE.generateDocId(condition.getName(), id);
             }
             ids.add(id);
-            String indexName = TimeSeriesUtils.queryIndexName(
-                tableName, pointOfTime.getPoint(), duration.getStep(), false, false);
-            indexIdsGroup.computeIfAbsent(indexName, v -> new ArrayList<>()).add(id);
         });
 
         HeatMap heatMap = new HeatMap();
 
-        Optional<Documents> response = getClient().ids(indexIdsGroup);
-        if (!response.isPresent()) {
+        SearchResponse response = getClient().ids(tableName, ids);
+        if (response.getHits().getHits().isEmpty()) {
             return heatMap;
         }
-        Map<String, Map<String, Object>> idMap = toMap(response.get());
+        Map<String, Map<String, Object>> idMap = toMap(response.getHits());
 
         final int defaultValue = ValueColumnMetadata.INSTANCE.getDefaultValue(condition.getName());
         for (String id : ids) {
             Map<String, Object> source = idMap.get(id);
             if (source != null) {
-                String value = (String) source.get(realValueColumn);
+                String value = (String) source.get(HistogramMetrics.DATASET);
                 heatMap.buildColumn(id, value, defaultValue);
             }
         }
@@ -270,7 +234,7 @@ public class MetricsQueryEsDAO extends EsDAO implements IMetricsQueryDAO {
         final String entityId = condition.getEntity().buildId();
 
         if (entityId == null &&
-            IndexController.LogicIndicesRegister.isMergedTable(condition.getName())) {
+            IndexController.LogicIndicesRegister.isMetricTable(condition.getName())) {
             sourceBuilder.query(
                 Query.bool()
                      .must(rangeQueryBuilder)
@@ -281,7 +245,7 @@ public class MetricsQueryEsDAO extends EsDAO implements IMetricsQueryDAO {
             );
         } else if (entityId == null) {
             sourceBuilder.query(rangeQueryBuilder);
-        } else if (IndexController.LogicIndicesRegister.isMergedTable(condition.getName())) {
+        } else if (IndexController.LogicIndicesRegister.isMetricTable(condition.getName())) {
             sourceBuilder.query(
                 Query.bool()
                      .must(rangeQueryBuilder)
@@ -307,14 +271,6 @@ public class MetricsQueryEsDAO extends EsDAO implements IMetricsQueryDAO {
         Map<String, Map<String, Object>> result = new HashMap<>();
         for (final SearchHit hit : hits) {
             result.put(hit.getId(), hit.getSource());
-        }
-        return result;
-    }
-
-    private Map<String, Map<String, Object>> toMap(Documents documents) {
-        Map<String, Map<String, Object>> result = new HashMap<>();
-        for (final Document document : documents) {
-            result.put(document.getId(), document.getSource());
         }
         return result;
     }

@@ -17,7 +17,6 @@
 
 package org.apache.skywalking.oap.server.core.browser.manual.service;
 
-import org.apache.skywalking.oap.server.core.analysis.Layer;
 import org.apache.skywalking.oap.server.core.analysis.SourceDispatcher;
 import org.apache.skywalking.oap.server.core.analysis.manual.service.ServiceTraffic;
 import org.apache.skywalking.oap.server.core.analysis.worker.MetricsStreamProcessor;
@@ -30,7 +29,7 @@ public class BrowserAppTrafficDispatcher extends BrowserAppTrafficSourceDispatch
         ServiceTraffic traffic = new ServiceTraffic();
         traffic.setTimeBucket(source.getTimeBucket());
         traffic.setName(source.getName());
-        traffic.setLayer(Layer.BROWSER);
+        traffic.setNodeType(source.getNodeType());
         MetricsStreamProcessor.getInstance().in(traffic);
     }
 }

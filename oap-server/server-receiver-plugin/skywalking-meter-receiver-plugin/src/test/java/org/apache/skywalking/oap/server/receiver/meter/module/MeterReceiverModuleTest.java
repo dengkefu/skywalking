@@ -18,15 +18,15 @@
 
 package org.apache.skywalking.oap.server.receiver.meter.module;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class MeterReceiverModuleTest {
 
     @Test
     public void testBuild() {
         final MeterReceiverModule module = new MeterReceiverModule();
-        Assertions.assertEquals(0, module.services().length);
-        Assertions.assertEquals(MeterReceiverModule.NAME, module.name());
+        Assert.assertEquals(0, module.services().length);
+        Assert.assertEquals(MeterReceiverModule.NAME, module.name());
     }
 }

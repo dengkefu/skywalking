@@ -20,30 +20,36 @@ package org.apache.skywalking.oap.server.receiver.sharing.server;
 
 import java.util.Objects;
 import org.apache.logging.log4j.util.Strings;
+import org.apache.skywalking.oap.server.library.util.StringUtil;
 import org.apache.skywalking.oap.server.core.CoreModule;
 import org.apache.skywalking.oap.server.core.remote.health.HealthCheckServiceHandler;
 import org.apache.skywalking.oap.server.core.server.GRPCHandlerRegister;
 import org.apache.skywalking.oap.server.core.server.GRPCHandlerRegisterImpl;
-import org.apache.skywalking.oap.server.core.server.HTTPHandlerRegister;
-import org.apache.skywalking.oap.server.core.server.HTTPHandlerRegisterImpl;
+import org.apache.skywalking.oap.server.core.server.JettyHandlerRegister;
+import org.apache.skywalking.oap.server.core.server.JettyHandlerRegisterImpl;
 import org.apache.skywalking.oap.server.core.server.auth.AuthenticationInterceptor;
+import org.apache.skywalking.oap.server.library.module.ModuleConfig;
 import org.apache.skywalking.oap.server.library.module.ModuleDefine;
 import org.apache.skywalking.oap.server.library.module.ModuleProvider;
 import org.apache.skywalking.oap.server.library.module.ModuleStartException;
 import org.apache.skywalking.oap.server.library.server.ServerException;
 import org.apache.skywalking.oap.server.library.server.grpc.GRPCServer;
-import org.apache.skywalking.oap.server.library.server.http.HTTPServer;
-import org.apache.skywalking.oap.server.library.server.http.HTTPServerConfig;
-import org.apache.skywalking.oap.server.library.util.StringUtil;
+import org.apache.skywalking.oap.server.library.server.jetty.JettyServer;
+import org.apache.skywalking.oap.server.library.server.jetty.JettyServerConfig;
 
 public class SharingServerModuleProvider extends ModuleProvider {
 
-    private SharingServerConfig config;
+    private final SharingServerConfig config;
     private GRPCServer grpcServer;
-    private HTTPServer httpServer;
+    private JettyServer jettyServer;
     private ReceiverGRPCHandlerRegister receiverGRPCHandlerRegister;
-    private ReceiverHTTPHandlerRegister receiverHTTPHandlerRegister;
+    private ReceiverJettyHandlerRegister receiverJettyHandlerRegister;
     private AuthenticationInterceptor authenticationInterceptor;
+
+    public SharingServerModuleProvider() {
+        super();
+        this.config = new SharingServerConfig();
+    }
 
     @Override
     public String name() {
@@ -56,42 +62,35 @@ public class SharingServerModuleProvider extends ModuleProvider {
     }
 
     @Override
-    public ConfigCreator newConfigCreator() {
-        return new ConfigCreator<SharingServerConfig>() {
-            @Override
-            public Class type() {
-                return SharingServerConfig.class;
-            }
-
-            @Override
-            public void onInitialized(final SharingServerConfig initialized) {
-                config = initialized;
-            }
-        };
+    public ModuleConfig createConfigBeanIfAbsent() {
+        return config;
     }
 
     @Override
     public void prepare() {
         if (config.getRestPort() > 0) {
-            HTTPServerConfig httpServerConfig =
-                HTTPServerConfig.builder()
-                                .host(config.getRestHost()).port(config.getRestPort())
-                                .contextPath(config.getRestContextPath())
-                                .maxThreads(config.getRestMaxThreads())
-                                .acceptQueueSize(config.getRestAcceptQueueSize())
-                                .idleTimeOut(config.getRestIdleTimeOut())
-                                .maxRequestHeaderSize(config.getHttpMaxRequestHeaderSize()).build();
-            httpServerConfig.setHost(Strings.isBlank(config.getRestHost()) ? "0.0.0.0" : config.getRestHost());
-            httpServerConfig.setPort(config.getRestPort());
-            httpServerConfig.setContextPath(config.getRestContextPath());
+            JettyServerConfig jettyServerConfig =
+                JettyServerConfig.builder()
+                                 .host(config.getRestHost()).port(config.getRestPort())
+                                 .contextPath(config.getRestContextPath())
+                                 .jettyMinThreads(config.getRestMinThreads())
+                                 .jettyMaxThreads(config.getRestMaxThreads())
+                                 .jettyAcceptQueueSize(config.getRestAcceptQueueSize())
+                                 .jettyAcceptorPriorityDelta(
+                                     config.getRestAcceptorPriorityDelta())
+                                 .jettyIdleTimeOut(config.getRestIdleTimeOut())
+                                 .jettyHttpMaxRequestHeaderSize(config.getHttpMaxRequestHeaderSize()).build();
+            jettyServerConfig.setHost(Strings.isBlank(config.getRestHost()) ? "0.0.0.0" : config.getRestHost());
+            jettyServerConfig.setPort(config.getRestPort());
+            jettyServerConfig.setContextPath(config.getRestContextPath());
 
-            httpServer = new HTTPServer(httpServerConfig);
-            httpServer.initialize();
+            jettyServer = new JettyServer(jettyServerConfig);
+            jettyServer.initialize();
 
-            this.registerServiceImplementation(HTTPHandlerRegister.class, new HTTPHandlerRegisterImpl(httpServer));
+            this.registerServiceImplementation(JettyHandlerRegister.class, new JettyHandlerRegisterImpl(jettyServer));
         } else {
-            this.receiverHTTPHandlerRegister = new ReceiverHTTPHandlerRegister();
-            this.registerServiceImplementation(HTTPHandlerRegister.class, receiverHTTPHandlerRegister);
+            this.receiverJettyHandlerRegister = new ReceiverJettyHandlerRegister();
+            this.registerServiceImplementation(JettyHandlerRegister.class, receiverJettyHandlerRegister);
         }
 
         if (StringUtil.isNotEmpty(config.getAuthentication())) {
@@ -152,10 +151,10 @@ public class SharingServerModuleProvider extends ModuleProvider {
                                                                            .provider()
                                                                            .getService(GRPCHandlerRegister.class));
         }
-        if (Objects.nonNull(receiverHTTPHandlerRegister)) {
-            receiverHTTPHandlerRegister.setHttpHandlerRegister(getManager().find(CoreModule.NAME)
-                                                                           .provider()
-                                                                           .getService(HTTPHandlerRegister.class));
+        if (Objects.nonNull(receiverJettyHandlerRegister)) {
+            receiverJettyHandlerRegister.setJettyHandlerRegister(getManager().find(CoreModule.NAME)
+                                                                             .provider()
+                                                                             .getService(JettyHandlerRegister.class));
         }
     }
 
@@ -165,8 +164,8 @@ public class SharingServerModuleProvider extends ModuleProvider {
             if (Objects.nonNull(grpcServer)) {
                 grpcServer.start();
             }
-            if (Objects.nonNull(httpServer)) {
-                httpServer.start();
+            if (Objects.nonNull(jettyServer)) {
+                jettyServer.start();
             }
         } catch (ServerException e) {
             throw new ModuleStartException(e.getMessage(), e);

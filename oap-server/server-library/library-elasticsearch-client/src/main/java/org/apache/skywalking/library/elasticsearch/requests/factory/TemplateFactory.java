@@ -39,7 +39,7 @@ public interface TemplateFactory {
 
     /**
      * Returns a request to create or update a template of {@code name} with the given {@code
-     * settings}, {@code mappings} and {@code order}.
+     * settings}, {@code mapping} and {@code order}.
      */
     HttpRequest createOrUpdate(String name, Map<String, ?> settings,
                                Mappings mappings, int order);

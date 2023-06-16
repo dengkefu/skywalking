@@ -21,10 +21,11 @@ package org.apache.skywalking.oap.server.configuration.nacos;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.google.common.base.Strings;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.skywalking.oap.server.library.util.StringUtil;
 import org.apache.skywalking.oap.server.configuration.api.AbstractConfigurationProvider;
 import org.apache.skywalking.oap.server.configuration.api.ConfigWatcherRegister;
+import org.apache.skywalking.oap.server.library.module.ModuleConfig;
 import org.apache.skywalking.oap.server.library.module.ModuleStartException;
-import org.apache.skywalking.oap.server.library.util.StringUtil;
 
 /**
  * Get configuration from Nacos.
@@ -33,24 +34,18 @@ import org.apache.skywalking.oap.server.library.util.StringUtil;
 public class NacosConfigurationProvider extends AbstractConfigurationProvider {
     private NacosServerSettings settings;
 
+    public NacosConfigurationProvider() {
+        settings = new NacosServerSettings();
+    }
+
     @Override
     public String name() {
         return "nacos";
     }
 
     @Override
-    public ConfigCreator newConfigCreator() {
-        return new ConfigCreator<NacosServerSettings>() {
-            @Override
-            public Class type() {
-                return NacosServerSettings.class;
-            }
-
-            @Override
-            public void onInitialized(final NacosServerSettings initialized) {
-                settings = initialized;
-            }
-        };
+    public ModuleConfig createConfigBeanIfAbsent() {
+        return settings;
     }
 
     @Override

@@ -18,11 +18,8 @@
 
 package org.apache.skywalking.oap.server.library.module;
 
-import lombok.Getter;
-
 public class ModuleAProvider extends ModuleProvider {
-    @Getter
-    private ModuleAProviderConfig config;
+    private ModuleAProviderConfig config = new ModuleAProviderConfig();
 
     @Override
     public String name() {
@@ -30,18 +27,8 @@ public class ModuleAProvider extends ModuleProvider {
     }
 
     @Override
-    public ConfigCreator newConfigCreator() {
-        return new ConfigCreator<ModuleAProviderConfig>() {
-            @Override
-            public Class type() {
-                return ModuleAProviderConfig.class;
-            }
-
-            @Override
-            public void onInitialized(final ModuleAProviderConfig initialized) {
-                config = initialized;
-            }
-        };
+    public ModuleConfig createConfigBeanIfAbsent() {
+        return config;
     }
 
     @Override

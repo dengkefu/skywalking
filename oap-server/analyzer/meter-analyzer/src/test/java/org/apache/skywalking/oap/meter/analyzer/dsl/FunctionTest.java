@@ -20,108 +20,114 @@ package org.apache.skywalking.oap.meter.analyzer.dsl;
 
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
 import java.util.Collection;
 
 import static com.google.common.collect.ImmutableMap.of;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.fail;
 
 @Slf4j
+@RunWith(Parameterized.class)
 public class FunctionTest {
+
+    @Parameterized.Parameter
+    public String name;
+
+    @Parameterized.Parameter(1)
+    public ImmutableMap<String, SampleFamily> input;
+
+    @Parameterized.Parameter(2)
+    public String expression;
+
+    @Parameterized.Parameter(3)
+    public Result want;
+
+    @Parameterized.Parameter(4)
+    public boolean isThrow;
+
+    @Parameterized.Parameters(name = "{index}: {0}")
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][] {
             {
                 "tag-override",
-                of("http_success_request", SampleFamilyBuilder.newBuilder(Sample.builder().labels(of("region", "us")).name("http_success_request").build()).build()),
-                "http_success_request.tag({ ['svc':'product', 'instance':'10.0.0.1'] })",
-                Result.success(SampleFamilyBuilder.newBuilder(Sample.builder().labels(of("svc", "product", "instance", "10.0.0.1")).name("http_success_request").build()).build()),
+                of("instance_cpu_percentage", SampleFamilyBuilder.newBuilder(Sample.builder().labels(of("region", "us")).name("instance_cpu_percentage").build()).build()),
+                "instance_cpu_percentage.tag({ ['svc':'product', 'instance':'10.0.0.1'] })",
+                Result.success(SampleFamilyBuilder.newBuilder(Sample.builder().labels(of("svc", "product", "instance", "10.0.0.1")).name("instance_cpu_percentage").build()).build()),
                 false,
             },
             {
                 "tag-add",
-                of("http_success_request", SampleFamilyBuilder.newBuilder(Sample.builder().labels(of("region", "us")).name("http_success_request").build()).build()),
-                "http_success_request.tag({tags -> tags.az = 'az1' })",
-                Result.success(SampleFamilyBuilder.newBuilder(Sample.builder().labels(of("region", "us", "az", "az1")).name("http_success_request").build()).build()),
+                of("instance_cpu_percentage", SampleFamilyBuilder.newBuilder(Sample.builder().labels(of("region", "us")).name("instance_cpu_percentage").build()).build()),
+                "instance_cpu_percentage.tag({tags -> tags.az = 'az1' })",
+                Result.success(SampleFamilyBuilder.newBuilder(Sample.builder().labels(of("region", "us", "az", "az1")).name("instance_cpu_percentage").build()).build()),
                 false,
             },
             {
                 "tag-remove",
-                of("http_success_request", SampleFamilyBuilder.newBuilder(Sample.builder().labels(of("region", "us")).name("http_success_request").build()).build()),
-                "http_success_request.tag({tags -> tags.remove('region') })",
-                Result.success(SampleFamilyBuilder.newBuilder(Sample.builder().labels(ImmutableMap.of()).name("http_success_request").build()).build()),
+                of("instance_cpu_percentage", SampleFamilyBuilder.newBuilder(Sample.builder().labels(of("region", "us")).name("instance_cpu_percentage").build()).build()),
+                "instance_cpu_percentage.tag({tags -> tags.remove('region') })",
+                Result.success(SampleFamilyBuilder.newBuilder(Sample.builder().labels(ImmutableMap.of()).name("instance_cpu_percentage").build()).build()),
                 false,
             },
             {
                 "tag-update",
-                of("http_success_request", SampleFamilyBuilder.newBuilder(Sample.builder().labels(of("region", "us")).name("http_success_request").build()).build()),
-                "http_success_request.tag({tags -> if (tags['region'] == 'us') {tags.region = 'zh'} })",
-                Result.success(SampleFamilyBuilder.newBuilder(Sample.builder().labels(of("region", "zh")).name("http_success_request").build()).build()),
+                of("instance_cpu_percentage", SampleFamilyBuilder.newBuilder(Sample.builder().labels(of("region", "us")).name("instance_cpu_percentage").build()).build()),
+                "instance_cpu_percentage.tag({tags -> if (tags['region'] == 'us') {tags.region = 'zh'} })",
+                Result.success(SampleFamilyBuilder.newBuilder(Sample.builder().labels(of("region", "zh")).name("instance_cpu_percentage").build()).build()),
                 false,
             },
             {
                 "tag-append",
-                of("http_success_request", SampleFamilyBuilder.newBuilder(Sample.builder().labels(of("region", "us")).name("http_success_request").build()).build()),
-                "http_success_request.tag({tags -> tags.region = 'prefix::' + tags.region})",
-                Result.success(SampleFamilyBuilder.newBuilder(Sample.builder().labels(of("region", "prefix::us")).name("http_success_request").build()).build()),
+                of("instance_cpu_percentage", SampleFamilyBuilder.newBuilder(Sample.builder().labels(of("region", "us")).name("instance_cpu_percentage").build()).build()),
+                "instance_cpu_percentage.tag({tags -> tags.region = 'prefix::' + tags.region})",
+                Result.success(SampleFamilyBuilder.newBuilder(Sample.builder().labels(of("region", "prefix::us")).name("instance_cpu_percentage").build()).build()),
                 false,
                 },
             {
                 "histogram",
-                of("http_success_request", SampleFamilyBuilder.newBuilder(
-                    Sample.builder().labels(of("le", "0.025")).value(100).name("http_success_request").build(),
-                    Sample.builder().labels(of("le", "0.75")).value(12).name("http_success_request").build(),
-                    Sample.builder().labels(of("le", "1.25")).value(36).name("http_success_request").build()).build()
+                of("instance_cpu_percentage", SampleFamilyBuilder.newBuilder(
+                    Sample.builder().labels(of("le", "0.025")).value(100).name("instance_cpu_percentage").build(),
+                    Sample.builder().labels(of("le", "1.25")).value(300).name("instance_cpu_percentage").build(),
+                    Sample.builder().labels(of("le", "0.75")).value(122).name("instance_cpu_percentage").build(),
+                    Sample.builder().labels(of("le", String.valueOf(Integer.MAX_VALUE))).value(410).name("instance_cpu_percentage").build()).build()
                 ),
-                "http_success_request.histogram()",
+                "instance_cpu_percentage.histogram()",
                 Result.success(SampleFamilyBuilder.newBuilder(
-                    Sample.builder().labels(of("le", "25")).value(100).name("http_success_request").build(),
-                    Sample.builder().labels(of("le", "750")).value(12).name("http_success_request").build(),
-                    Sample.builder().labels(of("le", "1250")).value(36).name("http_success_request").build()).build()
+                    Sample.builder().labels(of("le", "0")).value(100).name("instance_cpu_percentage").build(),
+                    Sample.builder().labels(of("le", "25")).value(22).name("instance_cpu_percentage").build(),
+                    Sample.builder().labels(of("le", "750")).value(178).name("instance_cpu_percentage").build(),
+                    Sample.builder().labels(of("le", "1250")).value(110).name("instance_cpu_percentage").build()).build()
                 ),
                 false,
             },
             {
                 "histogram_percentile",
-                of("http_success_request", SampleFamilyBuilder.newBuilder(
-                    Sample.builder().labels(of("le", "0.025")).value(100).name("http_success_request").build(),
-                    Sample.builder().labels(of("le", "0.75")).value(22).name("http_success_request").build(),
-                    Sample.builder().labels(of("le", "1.25")).value(30).name("http_success_request").build()).build()
+                of("instance_cpu_percentage", SampleFamilyBuilder.newBuilder(
+                    Sample.builder().labels(of("le", "0.025")).value(100).name("instance_cpu_percentage").build(),
+                    Sample.builder().labels(of("le", "1.25")).value(300).name("instance_cpu_percentage").build(),
+                    Sample.builder().labels(of("le", "0.75")).value(122).name("instance_cpu_percentage").build(),
+                    Sample.builder().labels(of("le", String.valueOf(Integer.MAX_VALUE))).value(410).name("instance_cpu_percentage").build()).build()
                 ),
-                "http_success_request.histogram().histogram_percentile([75,99])",
+                "instance_cpu_percentage.histogram().histogram_percentile([75,99])",
                 Result.success(SampleFamilyBuilder.newBuilder(
-                    Sample.builder().labels(of("le", "25")).value(100).name("http_success_request").build(),
-                    Sample.builder().labels(of("le", "750")).value(22).name("http_success_request").build(),
-                    Sample.builder().labels(of("le", "1250")).value(30).name("http_success_request").build()).build()
+                    Sample.builder().labels(of("le", "0")).value(100).name("instance_cpu_percentage").build(),
+                    Sample.builder().labels(of("le", "25")).value(22).name("instance_cpu_percentage").build(),
+                    Sample.builder().labels(of("le", "750")).value(178).name("instance_cpu_percentage").build(),
+                    Sample.builder().labels(of("le", "1250")).value(110).name("instance_cpu_percentage").build()).build()
                 ),
-                false,
-            },
-            {
-                "for-each",
-                of("http_success_request", SampleFamilyBuilder.newBuilder(
-                    Sample.builder().labels(of("region", "us")).name("http_success_request").build(),
-                    Sample.builder().labels(of("region", "cn")).name("http_success_request").build()
-                ).build()),
-                "http_success_request.forEach(['v1', 'v2'], {element, tags -> tags[element] = 'test'})",
-                Result.success(SampleFamilyBuilder.newBuilder(
-                    Sample.builder().labels(of("region", "us", "v1", "test", "v2", "test")).name("http_success_request").build(),
-                    Sample.builder().labels(of("region", "cn", "v1", "test", "v2", "test")).name("http_success_request").build()
-                ).build()),
                 false,
             },
         });
     }
 
-    @ParameterizedTest(name = "{0}")
-    @MethodSource("data")
-    public void test(String name,
-                     ImmutableMap<String, SampleFamily> input,
-                     String expression,
-                     Result want,
-                     boolean isThrow) {
+    @Test
+    public void test() {
         Expression e = DSL.parse(expression);
         Result r = null;
         try {
@@ -136,6 +142,6 @@ public class FunctionTest {
         if (isThrow) {
             fail("Should throw something");
         }
-        assertThat(r).isEqualTo(want);
+        assertThat(r, is(want));
     }
 }

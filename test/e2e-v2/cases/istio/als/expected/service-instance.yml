@@ -16,13 +16,7 @@
 {{- contains . }}
 - id: {{ notEmpty .id }}
   name: {{ notEmpty .name }}
-  attributes:
-  {{- contains .attributes }}
-  - name: pod
-    value: {{ notEmpty .value }}
-  - name: namespace
-    value: {{ notEmpty .value }}
-  {{- end }}
+  attributes: []
   language: UNKNOWN
   instanceuuid: {{ notEmpty .instanceuuid }}
 {{- end }}

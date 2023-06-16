@@ -22,6 +22,7 @@ import org.apache.skywalking.aop.server.receiver.mesh.MeshReceiverModule;
 import org.apache.skywalking.oap.server.core.CoreModule;
 import org.apache.skywalking.oap.server.core.oal.rt.OALEngineLoaderService;
 import org.apache.skywalking.oap.server.core.server.GRPCHandlerRegister;
+import org.apache.skywalking.oap.server.library.module.ModuleConfig;
 import org.apache.skywalking.oap.server.library.module.ModuleDefine;
 import org.apache.skywalking.oap.server.library.module.ModuleProvider;
 import org.apache.skywalking.oap.server.library.module.ModuleStartException;
@@ -31,9 +32,13 @@ import org.apache.skywalking.oap.server.receiver.sharing.server.SharingServerMod
 import org.apache.skywalking.oap.server.telemetry.TelemetryModule;
 
 public class EnvoyMetricReceiverProvider extends ModuleProvider {
-    private EnvoyMetricReceiverConfig config;
+    private final EnvoyMetricReceiverConfig config;
 
     protected String fieldMappingFile = "metadata-service-mapping.yaml";
+
+    public EnvoyMetricReceiverProvider() {
+        config = new EnvoyMetricReceiverConfig();
+    }
 
     @Override
     public String name() {
@@ -46,18 +51,8 @@ public class EnvoyMetricReceiverProvider extends ModuleProvider {
     }
 
     @Override
-    public ConfigCreator newConfigCreator() {
-        return new ConfigCreator<EnvoyMetricReceiverConfig>() {
-            @Override
-            public Class type() {
-                return EnvoyMetricReceiverConfig.class;
-            }
-
-            @Override
-            public void onInitialized(final EnvoyMetricReceiverConfig initialized) {
-                config = initialized;
-            }
-        };
+    public ModuleConfig createConfigBeanIfAbsent() {
+        return config;
     }
 
     @Override

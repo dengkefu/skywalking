@@ -18,5 +18,4 @@
 package org.apache.skywalking.oap.server.library.client.request;
 
 public interface InsertRequest extends PrepareRequest {
-    void onInsertCompleted();
 }

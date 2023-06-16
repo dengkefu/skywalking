@@ -18,12 +18,11 @@
 
 package org.apache.skywalking.oap.server.receiver.event;
 
-import com.linecorp.armeria.common.HttpMethod;
-import java.util.Collections;
 import org.apache.skywalking.oap.server.analyzer.event.EventAnalyzerModule;
 import org.apache.skywalking.oap.server.core.CoreModule;
 import org.apache.skywalking.oap.server.core.server.GRPCHandlerRegister;
-import org.apache.skywalking.oap.server.core.server.HTTPHandlerRegister;
+import org.apache.skywalking.oap.server.core.server.JettyHandlerRegister;
+import org.apache.skywalking.oap.server.library.module.ModuleConfig;
 import org.apache.skywalking.oap.server.library.module.ModuleDefine;
 import org.apache.skywalking.oap.server.library.module.ModuleProvider;
 import org.apache.skywalking.oap.server.library.module.ServiceNotProvidedException;
@@ -44,8 +43,8 @@ public class EventModuleProvider extends ModuleProvider {
     }
 
     @Override
-    public ConfigCreator newConfigCreator() {
-        return null;
+    public ModuleConfig createConfigBeanIfAbsent() {
+        return new EventModuleConfig();
     }
 
     @Override
@@ -59,12 +58,10 @@ public class EventModuleProvider extends ModuleProvider {
                                                                     .getService(GRPCHandlerRegister.class);
         final EventGrpcServiceHandler eventGRPCServiceHandler = new EventGrpcServiceHandler(getManager());
         grpcHandlerRegister.addHandler(eventGRPCServiceHandler);
-        HTTPHandlerRegister httpHandlerRegister = getManager().find(SharingServerModule.NAME)
-                                                              .provider()
-                                                              .getService(HTTPHandlerRegister.class);
-        httpHandlerRegister.addHandler(new EventRestServiceHandler(getManager()),
-                                       Collections.singletonList(HttpMethod.POST)
-        );
+        JettyHandlerRegister jettyHandlerRegister = getManager().find(SharingServerModule.NAME)
+                                                                .provider()
+                                                                .getService(JettyHandlerRegister.class);
+        jettyHandlerRegister.addHandler(new EventRestServiceHandler(getManager()));
     }
 
     @Override

@@ -20,6 +20,17 @@ package org.apache.skywalking.oal.rt;
 
 import freemarker.template.Configuration;
 import freemarker.template.Version;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
@@ -40,6 +51,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.JavaVersion;
 import org.apache.commons.lang3.SystemUtils;
+import org.apache.skywalking.oap.server.library.util.StringUtil;
 import org.apache.skywalking.oal.rt.output.AllDispatcherContext;
 import org.apache.skywalking.oal.rt.output.DispatcherContext;
 import org.apache.skywalking.oal.rt.parser.AnalysisResult;
@@ -60,23 +72,9 @@ import org.apache.skywalking.oap.server.core.source.oal.rt.metrics.MetricClassPa
 import org.apache.skywalking.oap.server.core.source.oal.rt.metrics.builder.MetricBuilderClassPackageHolder;
 import org.apache.skywalking.oap.server.core.storage.StorageBuilderFactory;
 import org.apache.skywalking.oap.server.core.storage.StorageException;
-import org.apache.skywalking.oap.server.core.storage.annotation.BanyanDB;
 import org.apache.skywalking.oap.server.core.storage.annotation.Column;
 import org.apache.skywalking.oap.server.library.module.ModuleStartException;
 import org.apache.skywalking.oap.server.library.util.ResourceUtils;
-import org.apache.skywalking.oap.server.library.util.StringUtil;
-
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.Reader;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 
 /**
  * OAL Runtime is the class generation engine, which load the generated classes from OAL scrip definitions. This runtime
@@ -262,25 +260,14 @@ public class OALRuntime implements OALEngine {
                 AnnotationsAttribute annotationsAttribute = new AnnotationsAttribute(
                     constPool, AnnotationsAttribute.visibleTag);
                 /**
-                 * Add @Column(name = "${sourceField.columnName}")
+                 * Add @Column(columnName = "${sourceField.columnName}")
                  */
                 Annotation columnAnnotation = new Annotation(Column.class.getName(), constPool);
-                columnAnnotation.addMemberValue("name", new StringMemberValue(field.getColumnName(), constPool));
+                columnAnnotation.addMemberValue("columnName", new StringMemberValue(field.getColumnName(), constPool));
                 if (field.getType().equals(String.class)) {
                     columnAnnotation.addMemberValue("length", new IntegerMemberValue(constPool, field.getLength()));
                 }
                 annotationsAttribute.addAnnotation(columnAnnotation);
-                if (field.isID()) {
-                    // Add SeriesID = 0 annotation to ID field.
-                    Annotation banyanShardingKeyAnnotation = new Annotation(BanyanDB.SeriesID.class.getName(), constPool);
-                    banyanShardingKeyAnnotation.addMemberValue("index", new IntegerMemberValue(constPool, 0));
-                    annotationsAttribute.addAnnotation(banyanShardingKeyAnnotation);
-                }
-
-                if (field.isGroupByCondInTopN()) {
-                    Annotation banyanTopNAggregationAnnotation = new Annotation(BanyanDB.TopNAggregation.class.getName(), constPool);
-                    annotationsAttribute.addAnnotation(banyanTopNAggregationAnnotation);
-                }
 
                 newField.getFieldInfo().addAttribute(annotationsAttribute);
             } catch (CannotCompileException e) {
@@ -335,7 +322,7 @@ public class OALRuntime implements OALEngine {
         }
 
         log.debug("Generate metrics class, " + metricsClass.getName());
-        writeGeneratedFile(metricsClass, "metrics");
+        writeGeneratedFile(metricsClass, metricsClass.getSimpleName(), "metrics");
 
         return targetClass;
     }
@@ -392,7 +379,7 @@ public class OALRuntime implements OALEngine {
             throw new OALCompileException(e.getMessage(), e);
         }
 
-        writeGeneratedFile(metricsBuilderClass,  "metrics/builder");
+        writeGeneratedFile(metricsBuilderClass, className, "metrics/builder");
     }
 
     /**
@@ -474,7 +461,7 @@ public class OALRuntime implements OALEngine {
             throw new OALCompileException(e.getMessage(), e);
         }
 
-        writeGeneratedFile(dispatcherClass, "dispatcher");
+        writeGeneratedFile(dispatcherClass, className, "dispatcher");
         return targetClass;
     }
 
@@ -520,9 +507,8 @@ public class OALRuntime implements OALEngine {
         }
     }
 
-    private void writeGeneratedFile(CtClass metricsClass, String type) throws OALCompileException {
+    private void writeGeneratedFile(CtClass metricsClass, String className, String type) throws OALCompileException {
         if (openEngineDebug) {
-            String className = metricsClass.getSimpleName();
             DataOutputStream printWriter = null;
             try {
                 File workPath = WorkPath.getPath();

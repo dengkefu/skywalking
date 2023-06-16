@@ -36,7 +36,6 @@ spans:
         value: POST
       {{- end }}
     logs: []
-    attachedevents: []
   - traceid: {{ notEmpty .traceid }}
     segmentid: {{ notEmpty .segmentid }}
     spanid: {{ .spanid }}
@@ -56,13 +55,12 @@ spans:
       {{- contains .tags }}
       - key: http.method
         value: POST
-      - key: http.url
+      - key: url
         value: http://medium-java:9092/users
-      - key: http.status.code
+      - key: status.code
         value: "200"
       {{- end }}
     logs: []
-    attachedevents: []
   - traceid: {{ notEmpty .traceid }}
     segmentid: {{ notEmpty .segmentid }}
     spanid: {{ .spanid }}
@@ -92,7 +90,6 @@ spans:
         value: POST
       {{- end }}
     logs: []
-    attachedevents: []
   - traceid: {{ notEmpty .traceid }}
     segmentid: {{ notEmpty .segmentid }}
     spanid: {{ .spanid }}
@@ -116,7 +113,6 @@ spans:
         value: POST
       {{- end }}
     logs: []
-    attachedevents: []
   - traceid: {{ notEmpty .traceid }}
     segmentid: {{ notEmpty .segmentid }}
     spanid: {{ .spanid }}
@@ -144,7 +140,6 @@ spans:
         value: POST
       {{- end }}
     logs: []
-    attachedevents: []
   - traceid: {{ notEmpty .traceid }}
     segmentid: {{ notEmpty .segmentid }}
     spanid: {{ .spanid }}
@@ -164,13 +159,12 @@ spans:
       {{- contains .tags }}
       - key: http.method
         value: POST
-      - key: http.url
+      - key: url
         value: http://provider-py-kafka:9089/users
-      - key: http.status.code
+      - key: status.code
         value: "200"
       {{- end }}
     logs: []
-    attachedevents: []
   - traceid: {{ notEmpty .traceid }}
     segmentid: {{ notEmpty .segmentid }}
     spanid: {{ .spanid }}
@@ -198,5 +192,4 @@ spans:
         value: POST
       {{- end }}
     logs: []
-    attachedevents: []
   {{- end }}

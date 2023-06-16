@@ -19,84 +19,41 @@
 package org.apache.skywalking.oap.server.core.storage.model;
 
 import org.apache.skywalking.oap.server.core.analysis.metrics.DataTable;
-import org.apache.skywalking.oap.server.core.storage.annotation.BanyanDB;
 import org.apache.skywalking.oap.server.core.storage.annotation.Column;
-import org.apache.skywalking.oap.server.core.storage.annotation.ElasticSearch;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.junit.Assert;
+import org.junit.Test;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.when;
-
-@ExtendWith(MockitoExtension.class)
 public class ModelColumnTest {
-    @Mock
-    private Column c;
-
-    @BeforeEach
-    public void before() {
-        when(c.name()).thenReturn("abc");
-    }
-
     @Test
     public void testColumnDefine() {
-        ModelColumn column = new ModelColumn(new ColumnName(c), byte[].class, byte[].class,
-                                             false, false, true, 0,
-                                             new SQLDatabaseExtension(),
-                                             new ElasticSearchExtension(
-                                                 ElasticSearch.MatchQuery.AnalyzerType.OAP_ANALYZER, null, false, false),
-                                             new BanyanDBExtension(-1, false, true, BanyanDB.IndexRule.IndexType.INVERTED, false)
+        ModelColumn column = new ModelColumn(new ColumnName("", "abc"), byte[].class, byte[].class, true,
+                                             false, true, 0,
+                                             Column.AnalyzerType.OAP_ANALYZER
         );
-        Assertions.assertTrue(column.isStorageOnly());
-        Assertions.assertEquals("abc", column.getColumnName().getName());
+        Assert.assertEquals(true, column.isStorageOnly());
+        Assert.assertEquals("abc", column.getColumnName().getName());
 
-        column = new ModelColumn(new ColumnName(c), DataTable.class, DataTable.class,
-                                 false, false, true, 200,
-                                 new SQLDatabaseExtension(),
-                                 new ElasticSearchExtension(ElasticSearch.MatchQuery.AnalyzerType.OAP_ANALYZER, null, false, false),
-                                 new BanyanDBExtension(-1, false, true, BanyanDB.IndexRule.IndexType.INVERTED, false)
+        column = new ModelColumn(new ColumnName("", "abc"), DataTable.class, DataTable.class, true,
+                                 false, true, 200,
+                                 Column.AnalyzerType.OAP_ANALYZER
         );
-        Assertions.assertTrue(column.isStorageOnly());
-        Assertions.assertEquals("abc", column.getColumnName().getName());
-        Assertions.assertEquals(200, column.getLength());
+        Assert.assertEquals(true, column.isStorageOnly());
+        Assert.assertEquals("abc", column.getColumnName().getName());
+        Assert.assertEquals(200, column.getLength());
 
-        column = new ModelColumn(new ColumnName(c), String.class, String.class,
-                                 false, false, true, 200,
-                                 new SQLDatabaseExtension(),
-                                 new ElasticSearchExtension(ElasticSearch.MatchQuery.AnalyzerType.OAP_ANALYZER, null, false, false),
-                                 new BanyanDBExtension(-1, false, true, BanyanDB.IndexRule.IndexType.INVERTED, false)
+        column = new ModelColumn(new ColumnName("", "abc"), String.class, String.class, true,
+                                 false, true, 200,
+                                 Column.AnalyzerType.OAP_ANALYZER
         );
-        Assertions.assertFalse(column.isStorageOnly());
-        Assertions.assertEquals("abc", column.getColumnName().getName());
+        Assert.assertEquals(false, column.isStorageOnly());
+        Assert.assertEquals("abc", column.getColumnName().getName());
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void testConflictDefinition() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            new ModelColumn(new ColumnName(c), String.class, String.class,
-                    true, false, true, 200,
-                    new SQLDatabaseExtension(),
-                    new ElasticSearchExtension(
-                            ElasticSearch.MatchQuery.AnalyzerType.OAP_ANALYZER, "abc", false, false),
-                    new BanyanDBExtension(-1, false, true, BanyanDB.IndexRule.IndexType.INVERTED, false)
-            );
-        });
-    }
-
-    @Test
-    public void testConflictDefinitionIndexOnly() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            new ModelColumn(new ColumnName(c), String.class, String.class,
-                    true, true, false, 200,
-                    new SQLDatabaseExtension(),
-                    new ElasticSearchExtension(
-                            ElasticSearch.MatchQuery.AnalyzerType.OAP_ANALYZER, "abc", false, false),
-                    new BanyanDBExtension(-1, false, true, BanyanDB.IndexRule.IndexType.INVERTED, false)
-            );
-        });
+        ModelColumn column = new ModelColumn(new ColumnName("", "abc"), String.class, String.class,
+                                             true, true, true, 200,
+                                             Column.AnalyzerType.OAP_ANALYZER
+        );
     }
 }

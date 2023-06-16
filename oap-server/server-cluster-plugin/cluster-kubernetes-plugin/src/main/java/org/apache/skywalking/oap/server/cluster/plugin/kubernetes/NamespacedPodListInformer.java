@@ -18,15 +18,24 @@
 
 package org.apache.skywalking.oap.server.cluster.plugin.kubernetes;
 
-import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.client.KubernetesClientBuilder;
-import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
-import io.fabric8.kubernetes.client.informers.cache.Lister;
-import lombok.extern.slf4j.Slf4j;
-
+import io.kubernetes.client.informer.SharedIndexInformer;
+import io.kubernetes.client.informer.SharedInformerFactory;
+import io.kubernetes.client.informer.cache.Lister;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.Configuration;
+import io.kubernetes.client.openapi.apis.CoreV1Api;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.util.Config;
+import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
 import static java.util.Objects.isNull;
 
@@ -38,38 +47,66 @@ public enum NamespacedPodListInformer {
      */
     INFORMER;
 
-    private Lister<Pod> podLister;
+    private Lister<V1Pod> podLister;
 
-    public synchronized void init(ClusterModuleKubernetesConfig podConfig, ResourceEventHandler<Pod> eventHandler) {
+    private SharedInformerFactory factory;
+
+    private final ExecutorService executorService = Executors.newSingleThreadExecutor(r -> {
+        Thread thread = new Thread(r, "SKYWALKING_KUBERNETES_CLUSTER_INFORMER");
+        thread.setDaemon(true);
+        return thread;
+    });
+
+    {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            if (Objects.nonNull(factory)) {
+                factory.stopAllRegisteredInformers();
+            }
+        }));
+    }
+
+    public synchronized void init(ClusterModuleKubernetesConfig podConfig) {
+
         try {
-            final var kubernetesClient = new KubernetesClientBuilder().build();
-            final var informer = kubernetesClient
-                .pods()
-                .inNamespace(podConfig.getNamespace())
-                .withLabelSelector(podConfig.getLabelSelector())
-                .inform(eventHandler);
-
-            podLister = new Lister<>(informer.getIndexer());
-
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                informer.close();
-                kubernetesClient.close();
-            }));
-        } catch (Exception e) {
+            doStartPodInformer(podConfig);
+        } catch (IOException e) {
             log.error("cannot connect with api server in kubernetes", e);
         }
     }
 
-    public Optional<List<Pod>> listPods() {
+    private void doStartPodInformer(ClusterModuleKubernetesConfig podConfig) throws IOException {
+
+        ApiClient apiClient = Config.defaultClient();
+        apiClient.setHttpClient(apiClient.getHttpClient().newBuilder().readTimeout(0, TimeUnit.SECONDS).build());
+        Configuration.setDefaultApiClient(apiClient);
+        CoreV1Api coreV1Api = new CoreV1Api(apiClient);
+        factory = new SharedInformerFactory(executorService);
+
+        SharedIndexInformer<V1Pod> podSharedIndexInformer = factory.sharedIndexInformerFor(
+            params -> coreV1Api.listNamespacedPodCall(
+                podConfig.getNamespace(), null, null, null, null,
+                podConfig.getLabelSelector(), Integer.MAX_VALUE, params.resourceVersion, null, params.timeoutSeconds,
+                params.watch, null
+            ),
+            V1Pod.class, V1PodList.class
+        );
+
+        factory.startAllRegisteredInformers();
+        podLister = new Lister<>(podSharedIndexInformer.getIndexer());
+    }
+
+    public Optional<List<V1Pod>> listPods() {
         if (isNull(podLister)) {
             return Optional.empty();
         }
         return Optional.ofNullable(podLister.list().size() != 0
-            ? podLister.list()
-            .stream()
-            .filter(
-                item -> "Running".equalsIgnoreCase(item.getStatus().getPhase()))
-            .collect(Collectors.toList())
-            : null);
+                                       ? podLister.list()
+                                                  .stream()
+                                                  .filter(
+                                                      item -> "Running".equalsIgnoreCase(item.getStatus().getPhase()))
+                                                  .collect(Collectors.toList())
+                                       : null);
+
     }
+
 }

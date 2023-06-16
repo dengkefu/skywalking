@@ -43,6 +43,7 @@ public class ServiceInstanceCallRelationDispatcher implements SourceDispatcher<S
         metrics.setSourceServiceInstanceId(source.getSourceServiceInstanceId());
         metrics.setDestServiceId(source.getDestServiceId());
         metrics.setDestServiceInstanceId(source.getDestServiceInstanceId());
+        metrics.setComponentId(source.getComponentId());
         metrics.setEntityId(source.getEntityId());
         MetricsStreamProcessor.getInstance().in(metrics);
     }
@@ -54,6 +55,7 @@ public class ServiceInstanceCallRelationDispatcher implements SourceDispatcher<S
         metrics.setSourceServiceInstanceId(source.getSourceServiceInstanceId());
         metrics.setDestServiceId(source.getDestServiceId());
         metrics.setDestServiceInstanceId(source.getDestServiceInstanceId());
+        metrics.setComponentId(source.getComponentId());
         metrics.setEntityId(source.getEntityId());
         MetricsStreamProcessor.getInstance().in(metrics);
     }

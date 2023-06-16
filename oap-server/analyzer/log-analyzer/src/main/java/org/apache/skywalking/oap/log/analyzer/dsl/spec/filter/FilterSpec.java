@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-
 import org.apache.skywalking.apm.network.logging.v3.LogData;
 import org.apache.skywalking.oap.log.analyzer.dsl.Binding;
 import org.apache.skywalking.oap.log.analyzer.dsl.spec.AbstractSpec;
@@ -38,11 +37,10 @@ import org.apache.skywalking.oap.log.analyzer.dsl.spec.parser.TextParserSpec;
 import org.apache.skywalking.oap.log.analyzer.dsl.spec.parser.YamlParserSpec;
 import org.apache.skywalking.oap.log.analyzer.dsl.spec.sink.SinkSpec;
 import org.apache.skywalking.oap.log.analyzer.provider.LogAnalyzerModuleConfig;
-import org.apache.skywalking.oap.log.analyzer.provider.log.listener.LogSinkListenerFactory;
-import org.apache.skywalking.oap.log.analyzer.provider.log.listener.RecordSinkListener;
-import org.apache.skywalking.oap.log.analyzer.provider.log.listener.TrafficSinkListener;
+import org.apache.skywalking.oap.log.analyzer.provider.log.listener.LogAnalysisListenerFactory;
+import org.apache.skywalking.oap.log.analyzer.provider.log.listener.RecordAnalysisListener;
+import org.apache.skywalking.oap.log.analyzer.provider.log.listener.TrafficAnalysisListener;
 import org.apache.skywalking.oap.server.core.source.Log;
-
 import org.apache.skywalking.oap.server.library.module.ModuleManager;
 import org.apache.skywalking.oap.server.library.module.ModuleStartException;
 import org.slf4j.Logger;
@@ -51,7 +49,7 @@ import org.slf4j.LoggerFactory;
 public class FilterSpec extends AbstractSpec {
     private static final Logger LOGGER = LoggerFactory.getLogger(FilterSpec.class);
 
-    private final List<LogSinkListenerFactory> sinkListenerFactories;
+    private final List<LogAnalysisListenerFactory> factories;
 
     private final TextParserSpec textParser;
 
@@ -72,9 +70,9 @@ public class FilterSpec extends AbstractSpec {
         parsedType = new TypeReference<Map<String, Object>>() {
         };
 
-        sinkListenerFactories = Arrays.asList(
-            new RecordSinkListener.Factory(moduleManager(), moduleConfig()),
-            new TrafficSinkListener.Factory(moduleManager(), moduleConfig())
+        factories = Arrays.asList(
+            new RecordAnalysisListener.Factory(moduleManager(), moduleConfig()),
+            new TrafficAnalysisListener.Factory(moduleManager(), moduleConfig())
         );
 
         textParser = new TextParserSpec(moduleManager(), moduleConfig());
@@ -129,7 +127,7 @@ public class FilterSpec extends AbstractSpec {
         final LogData.Builder logData = BINDING.get().log();
         try {
             final Map<String, Object> parsed = yamlParser.create().load(
-                    logData.getBody().getYaml().getYaml()
+                logData.getBody().getYaml().getYaml()
             );
 
             BINDING.get().parsed(parsed);
@@ -170,17 +168,17 @@ public class FilterSpec extends AbstractSpec {
 
         final Optional<AtomicReference<Log>> container = BINDING.get().logContainer();
         if (container.isPresent()) {
-            sinkListenerFactories.stream()
-                     .map(LogSinkListenerFactory::create)
-                     .filter(it -> it instanceof RecordSinkListener)
+            factories.stream()
+                     .map(LogAnalysisListenerFactory::create)
+                     .filter(it -> it instanceof RecordAnalysisListener)
                      .map(it -> it.parse(logData, extraLog))
-                     .map(it -> (RecordSinkListener) it)
-                     .map(RecordSinkListener::getLog)
+                     .map(it -> (RecordAnalysisListener) it)
+                     .map(RecordAnalysisListener::getLog)
                      .findFirst()
                      .ifPresent(log -> container.get().set(log));
         } else {
-            sinkListenerFactories.stream()
-                     .map(LogSinkListenerFactory::create)
+            factories.stream()
+                     .map(LogAnalysisListenerFactory::create)
                      .forEach(it -> it.parse(logData, extraLog).build());
         }
     }

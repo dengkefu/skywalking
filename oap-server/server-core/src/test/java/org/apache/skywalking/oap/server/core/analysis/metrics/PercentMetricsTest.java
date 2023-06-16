@@ -20,9 +20,8 @@ package org.apache.skywalking.oap.server.core.analysis.metrics;
 
 import org.apache.skywalking.oap.server.core.analysis.metrics.expression.StringMatch;
 import org.apache.skywalking.oap.server.core.remote.grpc.proto.RemoteData;
-import org.apache.skywalking.oap.server.core.storage.StorageID;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class PercentMetricsTest {
     @Test
@@ -34,7 +33,7 @@ public class PercentMetricsTest {
 
         impl.calculate();
 
-        Assertions.assertEquals(3333, impl.getValue());
+        Assert.assertEquals(3333, impl.getValue());
 
         impl = new PercentMetricsImpl();
         impl.combine(new StringMatch().match(true, true));
@@ -43,7 +42,7 @@ public class PercentMetricsTest {
 
         impl.calculate();
 
-        Assertions.assertEquals(6666, impl.getValue());
+        Assert.assertEquals(6666, impl.getValue());
     }
 
     @Test
@@ -62,13 +61,13 @@ public class PercentMetricsTest {
 
         impl.calculate();
 
-        Assertions.assertEquals(5000, impl.getValue());
+        Assert.assertEquals(5000, impl.getValue());
     }
 
     public class PercentMetricsImpl extends PercentMetrics {
 
         @Override
-        protected StorageID id0() {
+        protected String id0() {
             return null;
         }
 

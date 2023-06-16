@@ -35,28 +35,27 @@ import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.skywalking.oap.server.core.CoreModule;
 import org.apache.skywalking.oap.server.core.cluster.ClusterModule;
 import org.apache.skywalking.oap.server.core.cluster.ClusterNodesQuery;
-import org.apache.skywalking.oap.server.core.cluster.ClusterWatcher;
 import org.apache.skywalking.oap.server.core.cluster.RemoteInstance;
-import org.apache.skywalking.oap.server.core.status.ServerStatusService;
 import org.apache.skywalking.oap.server.library.module.ModuleDefineHolder;
 import org.apache.skywalking.oap.server.library.module.Service;
 import org.apache.skywalking.oap.server.library.server.grpc.ssl.DynamicSslContext;
-import org.apache.skywalking.oap.server.library.util.RunnableWithExceptionProtection;
 import org.apache.skywalking.oap.server.telemetry.TelemetryModule;
 import org.apache.skywalking.oap.server.telemetry.api.GaugeMetrics;
 import org.apache.skywalking.oap.server.telemetry.api.MetricsCreator;
 import org.apache.skywalking.oap.server.telemetry.api.MetricsTag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class manages the connections between OAP servers. There is a task schedule that will automatically query a
  * server list from the cluster module. Such as Zookeeper cluster module or Kubernetes cluster module.
  */
-@Slf4j
-public class RemoteClientManager implements Service, ClusterWatcher {
+public class RemoteClientManager implements Service {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(RemoteClientManager.class);
+
     private final ModuleDefineHolder moduleDefineHolder;
     private DynamicSslContext sslContext;
     private ClusterNodesQuery clusterNodesQuery;
@@ -94,28 +93,14 @@ public class RemoteClientManager implements Service, ClusterWatcher {
 
     public void start() {
         Optional.ofNullable(sslContext).ifPresent(DynamicSslContext::start);
-        Executors.newSingleThreadScheduledExecutor()
-                 .scheduleWithFixedDelay(new RunnableWithExceptionProtection(this::refresh, t -> log.error(
-                     "Scheduled refresh Remote Clients failure.", t)), 1, 10, TimeUnit.SECONDS);
+        Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(this::refresh, 1, 5, TimeUnit.SECONDS);
     }
 
     /**
-     * Refresh the remote clients by query OAP server list from the cluster module.
+     * Query OAP server list from the cluster module and create a new connection for the new node. Make the OAP server
+     * orderly because of each of the server will send stream data to each other by hash code.
      */
     void refresh() {
-        if (Objects.isNull(clusterNodesQuery)) {
-            this.clusterNodesQuery = moduleDefineHolder.find(ClusterModule.NAME)
-                                                       .provider()
-                                                       .getService(ClusterNodesQuery.class);
-        }
-
-        this.refresh(clusterNodesQuery.queryRemoteNodes());
-    }
-
-    /**
-     * Refresh the remote clients according to OAP server list. Make the OAP server orderly because of each of the server will send stream data to each other by hash code.
-     */
-    synchronized void refresh(List<RemoteInstance> instanceList) {
         if (gauge == null) {
             gauge = moduleDefineHolder.find(TelemetryModule.NAME)
                                       .provider()
@@ -126,33 +111,40 @@ public class RemoteClientManager implements Service, ClusterWatcher {
                                       );
         }
         try {
-            if (log.isDebugEnabled()) {
-                log.debug("Refresh remote nodes collection.");
+            if (Objects.isNull(clusterNodesQuery)) {
+                synchronized (RemoteClientManager.class) {
+                    if (Objects.isNull(clusterNodesQuery)) {
+                        this.clusterNodesQuery = moduleDefineHolder.find(ClusterModule.NAME)
+                                                                   .provider()
+                                                                   .getService(ClusterNodesQuery.class);
+                    }
+                }
             }
 
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Refresh remote nodes collection.");
+            }
+
+            List<RemoteInstance> instanceList = clusterNodesQuery.queryRemoteNodes();
             instanceList = distinct(instanceList);
             Collections.sort(instanceList);
 
             gauge.setValue(instanceList.size());
 
-            if (log.isDebugEnabled()) {
-                instanceList.forEach(instance -> log.debug("Cluster instance: {}", instance.toString()));
+            if (LOGGER.isDebugEnabled()) {
+                instanceList.forEach(instance -> LOGGER.debug("Cluster instance: {}", instance.toString()));
             }
 
             if (!compare(instanceList)) {
-                if (log.isDebugEnabled()) {
-                    log.debug("ReBuilding remote clients.");
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("ReBuilding remote clients.");
                 }
                 reBuildRemoteClients(instanceList);
-                moduleDefineHolder.find(CoreModule.NAME)
-                       .provider()
-                       .getService(ServerStatusService.class)
-                       .rebalancedCluster(System.currentTimeMillis());
             }
 
             printRemoteClientList();
         } catch (Throwable t) {
-            log.error(t.getMessage(), t);
+            LOGGER.error(t.getMessage(), t);
         }
     }
 
@@ -160,10 +152,10 @@ public class RemoteClientManager implements Service, ClusterWatcher {
      * Print the client list into log for confirm how many clients built.
      */
     private void printRemoteClientList() {
-        if (log.isDebugEnabled()) {
+        if (LOGGER.isDebugEnabled()) {
             StringBuilder addresses = new StringBuilder();
             this.usingClients.forEach(client -> addresses.append(client.getAddress().toString()).append(","));
-            log.debug("Remote client list: {}", addresses);
+            LOGGER.debug("Remote client list: {}", addresses);
         }
     }
 
@@ -272,11 +264,6 @@ public class RemoteClientManager implements Service, ClusterWatcher {
         } else {
             return false;
         }
-    }
-
-    @Override
-    public void onClusterNodesChanged(List<RemoteInstance> remoteInstances) {
-        refresh(remoteInstances);
     }
 
     enum Action {

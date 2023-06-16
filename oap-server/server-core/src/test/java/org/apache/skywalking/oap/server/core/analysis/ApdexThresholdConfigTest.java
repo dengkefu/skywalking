@@ -18,23 +18,22 @@
 
 package org.apache.skywalking.oap.server.core.analysis;
 
+import java.util.Optional;
+import java.util.Set;
 import org.apache.skywalking.oap.server.configuration.api.ConfigTable;
 import org.apache.skywalking.oap.server.configuration.api.ConfigWatcherRegister;
 import org.apache.skywalking.oap.server.configuration.api.GroupConfigTable;
 import org.apache.skywalking.oap.server.core.CoreModuleProvider;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.runners.MockitoJUnitRunner;
 
-import java.util.Optional;
-import java.util.Set;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(MockitoExtension.class)
+@RunWith(MockitoJUnitRunner.class)
 public class ApdexThresholdConfigTest {
 
     @Mock
@@ -43,13 +42,12 @@ public class ApdexThresholdConfigTest {
     @Test
     public void testLookupOfBeforeInit() {
         ApdexThresholdConfig config = new ApdexThresholdConfig(provider);
-        assertThat(config.lookup("foo")).isEqualTo(500);
-        assertThat(config.lookup("default")).isEqualTo(500);
-        assertThat(config.lookup("bar")).isEqualTo(500);
+        assertThat(config.lookup("foo"), is(500));
+        assertThat(config.lookup("default"), is(500));
+        assertThat(config.lookup("bar"), is(500));
     }
 
-    @Test
-    @Timeout(20)
+    @Test(timeout = 20000)
     public void testLookupOfDynamicUpdate() throws InterruptedException {
         ConfigWatcherRegister register = new MockConfigWatcherRegister(3);
         when(provider.name()).thenReturn("default");
@@ -60,9 +58,9 @@ public class ApdexThresholdConfigTest {
         while (config.lookup("foo").intValue() == 500) {
             Thread.sleep(2000);
         }
-        assertThat(config.lookup("foo")).isEqualTo(200);
-        assertThat(config.lookup("default")).isEqualTo(1000);
-        assertThat(config.lookup("bar")).isEqualTo(1000);
+        assertThat(config.lookup("foo"), is(200));
+        assertThat(config.lookup("default"), is(1000));
+        assertThat(config.lookup("bar"), is(1000));
     }
 
     public static class MockConfigWatcherRegister extends ConfigWatcherRegister {

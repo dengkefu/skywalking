@@ -14,11 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM eclipse-temurin:11-jre
+FROM adoptopenjdk/openjdk11:jre
 
 ENV JAVA_OPTS=" -Xms256M " \
-    SW_OAP_ADDRESS="http://127.0.0.1:12800" \
-    SW_ZIPKIN_ADDRESS="http://127.0.0.1:9412"
+    SW_OAP_ADDRESS="http://127.0.0.1:12800"
 
 WORKDIR skywalking
 
@@ -33,7 +32,7 @@ RUN tar -xzf "$DIST" --strip 1; \
     rm -rf "agent";
 
 COPY docker-entrypoint.sh .
-COPY log4j2.xml webapp/
+COPY logback.xml webapp/
 
 EXPOSE 8080
 

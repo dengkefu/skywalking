@@ -36,7 +36,7 @@ public abstract class HistogramMetrics {
      */
     public abstract void observe(double value);
 
-    public static class Timer implements Closeable {
+    public class Timer implements Closeable {
         private final HistogramMetrics metrics;
         private final long startNanos;
         private double duration;

@@ -18,16 +18,19 @@
 
 package org.apache.skywalking.oap.server.core.analysis;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.util.Calendar;
 import java.util.TimeZone;
 
+@RunWith(Parameterized.class)
 public class TimeBucketTest {
     private static final long NOW = System.currentTimeMillis();
 
+    @Parameterized.Parameters
     public static Object[] parameters() {
         return new Object[]{
                 DownSampling.Second,
@@ -37,9 +40,14 @@ public class TimeBucketTest {
         };
     }
 
-    @ParameterizedTest
-    @MethodSource("parameters")
-    public void testConversion(DownSampling downSampling) {
+    private DownSampling downSampling;
+
+    public TimeBucketTest(DownSampling downSampling) {
+        this.downSampling = downSampling;
+    }
+
+    @Test
+    public void testConversion() {
         long timestamp = TimeBucket.getTimestamp(TimeBucket.getTimeBucket(NOW, downSampling));
 
         Calendar instance = Calendar.getInstance(TimeZone.getDefault());
@@ -62,6 +70,6 @@ public class TimeBucketTest {
                 // Fall through
             }
         }
-        Assertions.assertEquals(instance.getTimeInMillis(), timestamp);
+        Assert.assertEquals(instance.getTimeInMillis(), timestamp);
     }
 }

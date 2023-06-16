@@ -19,9 +19,8 @@
 package org.apache.skywalking.oap.server.core.analysis.metrics;
 
 import org.apache.skywalking.oap.server.core.remote.grpc.proto.RemoteData;
-import org.apache.skywalking.oap.server.core.storage.StorageID;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class HeatMapMetricsTest {
     private int step = 10; //ms
@@ -46,12 +45,12 @@ public class HeatMapMetricsTest {
         metricsMocker.combine(100, step, maxNumOfSteps);
 
         final DataTable dataset = metricsMocker.getDataset();
-        Assertions.assertEquals(11, dataset.size());
+        Assert.assertEquals(11, dataset.size());
 
-        Assertions.assertEquals(1, dataset.get("20").intValue());
-        Assertions.assertEquals(3, dataset.get("50").intValue());
-        Assertions.assertEquals(1, dataset.get("60").intValue());
-        Assertions.assertEquals(8, dataset.get("100").intValue());
+        Assert.assertEquals(1, dataset.get("20").intValue());
+        Assert.assertEquals(3, dataset.get("50").intValue());
+        Assert.assertEquals(1, dataset.get("60").intValue());
+        Assert.assertEquals(8, dataset.get("100").intValue());
     }
 
     @Test
@@ -78,18 +77,18 @@ public class HeatMapMetricsTest {
         metricsMocker.combine(metricsMocker1);
 
         final DataTable dataset = metricsMocker.getDataset();
-        Assertions.assertEquals(11, dataset.size());
+        Assert.assertEquals(11, dataset.size());
 
-        Assertions.assertEquals(1, dataset.get("20").intValue());
-        Assertions.assertEquals(3, dataset.get("50").intValue());
-        Assertions.assertEquals(1, dataset.get("60").intValue());
-        Assertions.assertEquals(8, dataset.get("100").intValue());
+        Assert.assertEquals(1, dataset.get("20").intValue());
+        Assert.assertEquals(3, dataset.get("50").intValue());
+        Assert.assertEquals(1, dataset.get("60").intValue());
+        Assert.assertEquals(8, dataset.get("100").intValue());
     }
 
     public class HistogramMetricsMocker extends HistogramMetrics {
 
         @Override
-        protected StorageID id0() {
+        protected String id0() {
             return null;
         }
 

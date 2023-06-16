@@ -18,6 +18,8 @@
 
 package org.apache.skywalking.oap.server.library.util;
 
+import java.util.function.Consumer;
+
 public final class StringUtil {
     public static boolean isEmpty(String str) {
         return str == null || str.length() == 0;
@@ -33,6 +35,12 @@ public final class StringUtil {
 
     public static boolean isNotBlank(String str) {
         return !isBlank(str);
+    }
+
+    public static void setIfPresent(String value, Consumer<String> setter) {
+        if (isNotEmpty(value)) {
+            setter.accept(value);
+        }
     }
 
     public static String join(final char delimiter, final String... strings) {

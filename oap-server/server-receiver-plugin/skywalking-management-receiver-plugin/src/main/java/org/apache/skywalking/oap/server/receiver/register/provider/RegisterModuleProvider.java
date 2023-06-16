@@ -18,17 +18,17 @@
 
 package org.apache.skywalking.oap.server.receiver.register.provider;
 
-import com.linecorp.armeria.common.HttpMethod;
-import java.util.Collections;
 import org.apache.skywalking.oap.server.core.CoreModule;
 import org.apache.skywalking.oap.server.core.server.GRPCHandlerRegister;
-import org.apache.skywalking.oap.server.core.server.HTTPHandlerRegister;
+import org.apache.skywalking.oap.server.core.server.JettyHandlerRegister;
+import org.apache.skywalking.oap.server.library.module.ModuleConfig;
 import org.apache.skywalking.oap.server.library.module.ModuleDefine;
 import org.apache.skywalking.oap.server.library.module.ModuleProvider;
 import org.apache.skywalking.oap.server.receiver.register.module.RegisterModule;
-import org.apache.skywalking.oap.server.receiver.register.provider.handler.v8.grpc.ManagementServiceGRPCHandler;
-import org.apache.skywalking.oap.server.receiver.register.provider.handler.v8.grpc.ManagementServiceGrpcHandlerCompat;
-import org.apache.skywalking.oap.server.receiver.register.provider.handler.v8.rest.ManagementServiceHTTPHandler;
+import org.apache.skywalking.oap.server.receiver.register.provider.handler.v8.grpc.ManagementServiceHandler;
+import org.apache.skywalking.oap.server.receiver.register.provider.handler.v8.grpc.ManagementServiceHandlerCompat;
+import org.apache.skywalking.oap.server.receiver.register.provider.handler.v8.rest.ManagementServiceKeepAliveHandler;
+import org.apache.skywalking.oap.server.receiver.register.provider.handler.v8.rest.ManagementServiceReportPropertiesHandler;
 import org.apache.skywalking.oap.server.receiver.sharing.server.SharingServerModule;
 
 public class RegisterModuleProvider extends ModuleProvider {
@@ -44,7 +44,7 @@ public class RegisterModuleProvider extends ModuleProvider {
     }
 
     @Override
-    public ConfigCreator newConfigCreator() {
+    public ModuleConfig createConfigBeanIfAbsent() {
         return null;
     }
 
@@ -57,16 +57,15 @@ public class RegisterModuleProvider extends ModuleProvider {
         GRPCHandlerRegister grpcHandlerRegister = getManager().find(SharingServerModule.NAME)
                                                               .provider()
                                                               .getService(GRPCHandlerRegister.class);
-        ManagementServiceGRPCHandler managementServiceHTTPHandler = new ManagementServiceGRPCHandler(getManager());
-        grpcHandlerRegister.addHandler(managementServiceHTTPHandler);
-        grpcHandlerRegister.addHandler(new ManagementServiceGrpcHandlerCompat(managementServiceHTTPHandler));
+        ManagementServiceHandler managementServiceHandler = new ManagementServiceHandler(getManager());
+        grpcHandlerRegister.addHandler(managementServiceHandler);
+        grpcHandlerRegister.addHandler(new ManagementServiceHandlerCompat(managementServiceHandler));
 
-        HTTPHandlerRegister httpHandlerRegister = getManager().find(SharingServerModule.NAME)
-                                                              .provider()
-                                                              .getService(HTTPHandlerRegister.class);
-        httpHandlerRegister.addHandler(new ManagementServiceHTTPHandler(getManager()),
-                                       Collections.singletonList(HttpMethod.POST)
-        );
+        JettyHandlerRegister jettyHandlerRegister = getManager().find(SharingServerModule.NAME)
+                                                                .provider()
+                                                                .getService(JettyHandlerRegister.class);
+        jettyHandlerRegister.addHandler(new ManagementServiceReportPropertiesHandler(getManager()));
+        jettyHandlerRegister.addHandler(new ManagementServiceKeepAliveHandler(getManager()));
     }
 
     @Override

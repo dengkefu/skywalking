@@ -18,7 +18,6 @@
 package org.apache.skywalking.library.elasticsearch.requests.factory;
 
 import com.linecorp.armeria.common.HttpRequest;
-import java.util.List;
 import java.util.Map;
 import org.apache.skywalking.library.elasticsearch.requests.IndexRequest;
 import org.apache.skywalking.library.elasticsearch.requests.UpdateRequest;
@@ -39,11 +38,6 @@ public interface DocumentFactory {
      * Returns a request to get multiple documents of {@code ids} in {@code index}.
      */
     HttpRequest mget(String index, String type, Iterable<String> ids);
-
-    /**
-     * Returns a request to get multiple documents of {@code indexIds}.
-     */
-    HttpRequest mget(final String type, final Map<String, List<String>> indexIds);
 
     /**
      * Returns a request to index a document with {@link IndexRequest}.

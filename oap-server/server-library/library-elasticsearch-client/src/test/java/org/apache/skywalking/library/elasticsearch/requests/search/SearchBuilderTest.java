@@ -17,10 +17,9 @@
 
 package org.apache.skywalking.library.elasticsearch.requests.search;
 
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class SearchBuilderTest {
     @Test
@@ -40,28 +39,22 @@ public class SearchBuilderTest {
         assertThat(query.getShouldNot()).hasSize(2);
     }
 
-    @Test
+    @Test(expected = IllegalStateException.class)
     public void searchQueryBuilderShouldNotBeSetMultipleTimes() {
-        assertThrows(IllegalStateException.class, () -> {
-            final BoolQueryBuilder queryBuilder = Query.bool();
-            final SearchBuilder searchBuilder = Search.builder().query(queryBuilder);
-            searchBuilder.query(Query.bool());
-        });
+        final BoolQueryBuilder queryBuilder = Query.bool();
+        final SearchBuilder searchBuilder = Search.builder().query(queryBuilder);
+        searchBuilder.query(Query.bool());
     }
 
-    @Test
+    @Test(expected = IllegalStateException.class)
     public void searchQueryShouldNotBeSetMultipleTimes() {
-        assertThrows(IllegalStateException.class, () -> {
-            final SearchBuilder searchBuilder = Search.builder().query(Query.bool().build());
-            searchBuilder.query(Query.bool().build());
-        });
+        final SearchBuilder searchBuilder = Search.builder().query(Query.bool().build());
+        searchBuilder.query(Query.bool().build());
     }
 
-    @Test
+    @Test(expected = IllegalStateException.class)
     public void searchQueryAndBuilderShouldNotBeSetSimultaneously() {
-        assertThrows(IllegalStateException.class, () -> {
-            final SearchBuilder searchBuilder = Search.builder().query(Query.bool().build());
-            searchBuilder.query(Query.bool());
-        });
+        final SearchBuilder searchBuilder = Search.builder().query(Query.bool().build());
+        searchBuilder.query(Query.bool());
     }
 }

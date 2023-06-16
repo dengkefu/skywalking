@@ -19,9 +19,8 @@
 package org.apache.skywalking.oap.server.core.analysis.metrics;
 
 import org.apache.skywalking.oap.server.core.remote.grpc.proto.RemoteData;
-import org.apache.skywalking.oap.server.core.storage.StorageID;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  *
@@ -35,7 +34,7 @@ public class MaxLongMetricsTest {
         impl.combine(5);
         impl.combine(20);
         impl.calculate();
-        Assertions.assertEquals(20, impl.getValue());
+        Assert.assertEquals(20, impl.getValue());
     }
 
     @Test
@@ -49,13 +48,13 @@ public class MaxLongMetricsTest {
         impl2.combine(6);
 
         impl.combine(impl2);
-        Assertions.assertEquals(10, impl.getValue());
+        Assert.assertEquals(10, impl.getValue());
     }
 
     public class MaxLongMetricsImpl extends MaxLongMetrics {
 
         @Override
-        protected StorageID id0() {
+        protected String id0() {
             return null;
         }
 

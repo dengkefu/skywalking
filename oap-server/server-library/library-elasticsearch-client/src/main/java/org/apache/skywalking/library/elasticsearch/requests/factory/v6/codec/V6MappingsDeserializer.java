@@ -22,8 +22,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.skywalking.library.elasticsearch.response.Mappings;
@@ -41,24 +39,14 @@ final class V6MappingsDeserializer extends JsonDeserializer<Mappings> {
             m.entrySet()
              .stream()
              .filter(it -> it.getValue() instanceof Map)
-             .filter(it -> ((Map<String, Object>) it.getValue()).containsKey("properties")
-                 || ((Map<String, Object>) it.getValue()).containsKey("_source"))
+             .filter(it -> ((Map<String, Object>) it.getValue()).containsKey("properties"))
+             .peek(it -> it.setValue(((Map<?, ?>) it.getValue()).get("properties")))
              .findFirst();
 
         final Optional<Mappings> result = typeMapping.map(it -> {
             final Mappings mappings = new Mappings();
             mappings.setType(it.getKey());
-            Map<String, Object> properties = (Map<String, Object>) ((Map<?, ?>) it.getValue()).get("properties");
-            Map<String, Object> source = (Map<String, Object>) ((Map<?, ?>) it.getValue()).get("_source");
-            if (properties != null) {
-                mappings.setProperties(properties);
-            }
-            if (source != null) {
-                Object excludes = source.get("excludes");
-                if (excludes != null) {
-                    mappings.getSource().setExcludes(new HashSet<>((ArrayList<String>) excludes));
-                }
-            }
+            mappings.setProperties((Map<String, Object>) it.getValue());
             return mappings;
         });
         return result.orElse(null);

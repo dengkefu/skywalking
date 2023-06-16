@@ -18,14 +18,14 @@
 
 package org.apache.skywalking.oap.server.core;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class CoreModuleTest {
     @Test
     public void testOpenServiceList() {
         CoreModule coreModule = new CoreModule();
 
-        Assertions.assertEquals(40, coreModule.services().length);
+        Assert.assertEquals(33, coreModule.services().length);
     }
 }

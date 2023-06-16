@@ -26,9 +26,7 @@ import org.apache.skywalking.oap.server.core.analysis.metrics.annotation.Entranc
 import org.apache.skywalking.oap.server.core.analysis.metrics.annotation.MetricsFunction;
 import org.apache.skywalking.oap.server.core.analysis.metrics.annotation.SourceFrom;
 import org.apache.skywalking.oap.server.core.query.sql.Function;
-import org.apache.skywalking.oap.server.core.storage.annotation.BanyanDB;
 import org.apache.skywalking.oap.server.core.storage.annotation.Column;
-import org.apache.skywalking.oap.server.core.storage.annotation.ElasticSearch;
 
 /**
  * Apdex dissatisfaction levels of Tolerating (apdex_t) and Frustrated (apdex_f) indicate how slow site performance
@@ -46,28 +44,23 @@ public abstract class ApdexMetrics extends Metrics implements IntValueHolder {
     protected static final String S_NUM = "s_num";
     // Level: tolerated
     protected static final String T_NUM = "t_num";
-    protected static final String VALUE = "int_value";
+    protected static final String VALUE = "value";
 
     @Getter
     @Setter
-    @Column(name = TOTAL_NUM, storageOnly = true)
-    @BanyanDB.MeasureField
+    @Column(columnName = TOTAL_NUM, storageOnly = true)
     private long totalNum;
     @Getter
     @Setter
-    @Column(name = S_NUM, storageOnly = true)
-    @BanyanDB.MeasureField
+    @Column(columnName = S_NUM, storageOnly = true)
     private long sNum;
     @Getter
     @Setter
-    @Column(name = T_NUM, storageOnly = true)
-    @BanyanDB.MeasureField
+    @Column(columnName = T_NUM, storageOnly = true)
     private long tNum;
     @Getter
     @Setter
-    @Column(name = VALUE, dataType = Column.ValueDataType.COMMON_VALUE, function = Function.Avg)
-    @ElasticSearch.Column(legacyName = "value")
-    @BanyanDB.MeasureField
+    @Column(columnName = VALUE, dataType = Column.ValueDataType.COMMON_VALUE, function = Function.Avg)
     private int value;
 
     @Entrance
@@ -101,5 +94,15 @@ public abstract class ApdexMetrics extends Metrics implements IntValueHolder {
     @Override
     public int getValue() {
         return value;
+    }
+
+    @Override
+    public boolean haveDefault() {
+        return true;
+    }
+
+    @Override
+    public boolean isDefaultValue() {
+        return value == 0;
     }
 }

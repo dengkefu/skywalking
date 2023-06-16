@@ -22,6 +22,7 @@ import com.google.common.base.Strings;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.skywalking.oap.server.configuration.api.AbstractConfigurationProvider;
 import org.apache.skywalking.oap.server.configuration.api.ConfigWatcherRegister;
+import org.apache.skywalking.oap.server.library.module.ModuleConfig;
 import org.apache.skywalking.oap.server.library.module.ModuleStartException;
 
 /**
@@ -29,7 +30,11 @@ import org.apache.skywalking.oap.server.library.module.ModuleStartException;
  */
 @Slf4j
 public class ConsulConfigurationProvider extends AbstractConfigurationProvider {
-    private ConsulConfigurationCenterSettings settings;
+    private final ConsulConfigurationCenterSettings settings;
+
+    public ConsulConfigurationProvider() {
+        this.settings = new ConsulConfigurationCenterSettings();
+    }
 
     @Override
     public String name() {
@@ -37,18 +42,8 @@ public class ConsulConfigurationProvider extends AbstractConfigurationProvider {
     }
 
     @Override
-    public ConfigCreator newConfigCreator() {
-        return new ConfigCreator<ConsulConfigurationCenterSettings>() {
-            @Override
-            public Class type() {
-                return ConsulConfigurationCenterSettings.class;
-            }
-
-            @Override
-            public void onInitialized(final ConsulConfigurationCenterSettings initialized) {
-                settings = initialized;
-            }
-        };
+    public ModuleConfig createConfigBeanIfAbsent() {
+        return settings;
     }
 
     @Override

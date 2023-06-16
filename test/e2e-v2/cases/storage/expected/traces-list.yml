@@ -17,10 +17,13 @@ traces:
 {{- contains .traces }}
 - segmentid: {{ notEmpty .segmentid }}
   endpointnames:
-    - POST:/users
+  {{- contains .endpointnames }}
+    - POST:/info
+  {{- end }}
   duration: {{ ge .duration 0 }}
   start: "{{ notEmpty .start}}"
   iserror: false
   traceids:
-    - {{ index .traceids 0 }}
+    - {{ (index .traceids 0) }}
 {{- end }}
+total: {{ gt .total 0 }}

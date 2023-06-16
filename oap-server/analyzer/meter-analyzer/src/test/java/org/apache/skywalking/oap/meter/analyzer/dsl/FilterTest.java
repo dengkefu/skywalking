@@ -18,19 +18,38 @@
 
 package org.apache.skywalking.oap.meter.analyzer.dsl;
 
-import com.google.common.collect.ImmutableMap;
-import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
+import static com.google.common.collect.ImmutableMap.of;
 
 import java.util.Arrays;
 import java.util.Collection;
 
-import static com.google.common.collect.ImmutableMap.of;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+
+import com.google.common.collect.ImmutableMap;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@RunWith(Parameterized.class)
 public class FilterTest {
+    @Parameterized.Parameter
+    public String name;
+
+    @Parameterized.Parameter(1)
+    public ImmutableMap<String, SampleFamily> input;
+
+    @Parameterized.Parameter(2)
+    public String expression;
+
+    @Parameterized.Parameter(3)
+    public Result want;
+
+    @Parameterized.Parameters(name = "{index}: {0}")
     public static Collection<Object[]> data() {
         final SampleFamily sf =
             SampleFamilyBuilder.newBuilder(
@@ -79,14 +98,10 @@ public class FilterTest {
         });
     }
 
-    @ParameterizedTest(name = "{0}")
-    @MethodSource("data")
-    public void test(String name,
-                     ImmutableMap<String, SampleFamily> input,
-                     String expression,
-                     Result want) {
+    @Test
+    public void test() {
         Expression e = DSL.parse(expression);
         Result r = e.run(input);
-        assertThat(r).isEqualTo(want);
+        assertThat(r, is(want));
     }
 }

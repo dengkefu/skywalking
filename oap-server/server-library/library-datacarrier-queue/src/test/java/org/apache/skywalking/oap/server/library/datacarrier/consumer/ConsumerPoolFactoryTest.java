@@ -18,16 +18,16 @@
 
 package org.apache.skywalking.oap.server.library.datacarrier.consumer;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class ConsumerPoolFactoryTest {
 
-    @BeforeEach
+    @Before
     public void createIfAbsent() throws Exception {
         BulkConsumePool.Creator creator = new BulkConsumePool.Creator("my-test-pool", 10, 20);
         boolean firstCreated = ConsumerPoolFactory.INSTANCE.createIfAbsent("my-test-pool", creator);

@@ -23,7 +23,6 @@ import java.io.StringReader;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.skywalking.oap.server.configuration.api.ConfigChangeWatcher;
 import org.apache.skywalking.oap.server.core.CoreModule;
-import org.apache.skywalking.oap.server.core.config.group.uri.quickmatch.QuickUriGroupingRule;
 import org.apache.skywalking.oap.server.library.module.ModuleProvider;
 import org.apache.skywalking.oap.server.library.util.ResourceUtils;
 
@@ -49,7 +48,7 @@ public class EndpointNameGroupingRuleWatcher extends ConfigChangeWatcher {
     public void notify(final ConfigChangeEvent value) {
         if (value.getEventType().equals(EventType.DELETE)) {
             ruleSetting = null;
-            grouping.setEndpointGroupingRule(new QuickUriGroupingRule());
+            grouping.setEndpointGroupingRule(new EndpointGroupingRule());
         } else {
             ruleSetting = value.getNewValue();
             grouping.setEndpointGroupingRule(new EndpointGroupingRuleReader(new StringReader(ruleSetting)).read());

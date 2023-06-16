@@ -19,8 +19,8 @@
 package org.apache.skywalking.oap.server.core.alarm.provider;
 
 import org.apache.skywalking.oap.server.core.alarm.MetaInAlarm;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class AlarmMessageFormatterTest {
     @Test
@@ -59,7 +59,7 @@ public class AlarmMessageFormatterTest {
             }
         });
 
-        Assertions.assertEquals("abc words {sdf", message);
+        Assert.assertEquals("abc words {sdf", message);
     }
 
     @Test
@@ -97,6 +97,6 @@ public class AlarmMessageFormatterTest {
                 return "";
             }
         });
-        Assertions.assertEquals("abc} words service - 1290 .. {", message);
+        Assert.assertEquals("abc} words service - 1290 .. {", message);
     }
 }

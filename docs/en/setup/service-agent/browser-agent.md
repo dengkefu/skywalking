@@ -3,7 +3,7 @@
 
 It has these features:
 - Provides metrics and error collection to SkyWalking backend.
-- Lightweight. A simple JavaScript library. No browser plugin is required. 
+- Lightweight. No browser plugin required. A simple JavaScript library.
 - Browser serves as a starting point for the entire distributed tracing system.
 
 See Client JS [official doc](https://github.com/apache/skywalking-client-js#quick-start) for more information.

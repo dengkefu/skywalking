@@ -23,7 +23,7 @@ import org.apache.skywalking.oap.server.library.client.request.UpdateRequest;
 
 @Getter
 public class UpdateRequestWrapper implements UpdateRequest {
-    protected org.apache.skywalking.library.elasticsearch.requests.UpdateRequest request;
+    private final org.apache.skywalking.library.elasticsearch.requests.UpdateRequest request;
 
     public UpdateRequestWrapper(String index, String type, String id,
                                 Map<String, Object> source) {
@@ -33,17 +33,5 @@ public class UpdateRequestWrapper implements UpdateRequest {
                                                                                     .id(id)
                                                                                     .doc(source)
                                                                                     .build();
-    }
-
-    /**
-     * Expose an empty constructor to lazy initialization.
-     */
-    protected UpdateRequestWrapper() {
-
-    }
-
-    @Override
-    public void onUpdateFailure() {
-
     }
 }

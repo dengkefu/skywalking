@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG BASE_IMAGE='eclipse-temurin:11-jre'
+ARG BASE_IMAGE='adoptopenjdk/openjdk11:jre'
 
 ARG SKYWALKING_CLI_VERSION
 
@@ -22,11 +22,7 @@ FROM apache/skywalking-cli:$SKYWALKING_CLI_VERSION as cli
 
 FROM $BASE_IMAGE
 
-ENV SKYWALKING_HOME=/skywalking
-
-ENV PATH=$SKYWALKING_HOME/bin:$PATH
-
-WORKDIR $SKYWALKING_HOME
+WORKDIR /skywalking
 
 ENV JAVA_OPTS=" -Xms2G "
 

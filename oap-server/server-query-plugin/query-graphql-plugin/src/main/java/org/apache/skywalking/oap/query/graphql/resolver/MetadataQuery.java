@@ -18,25 +18,24 @@
 
 package org.apache.skywalking.oap.query.graphql.resolver;
 
-import graphql.kickstart.tools.GraphQLQueryResolver;
+import com.coxautodev.graphql.tools.GraphQLQueryResolver;
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
+import org.apache.skywalking.oap.query.graphql.type.TimeInfo;
 import org.apache.skywalking.oap.server.core.CoreModule;
-import org.apache.skywalking.oap.server.core.analysis.IDManager;
-import org.apache.skywalking.oap.server.core.analysis.Layer;
 import org.apache.skywalking.oap.server.core.query.MetadataQueryService;
 import org.apache.skywalking.oap.server.core.query.input.Duration;
+import org.apache.skywalking.oap.server.core.query.type.ClusterBrief;
 import org.apache.skywalking.oap.server.core.query.type.Database;
 import org.apache.skywalking.oap.server.core.query.type.Endpoint;
+import org.apache.skywalking.oap.server.core.query.type.EndpointInfo;
 import org.apache.skywalking.oap.server.core.query.type.Service;
 import org.apache.skywalking.oap.server.core.query.type.ServiceInstance;
 import org.apache.skywalking.oap.server.library.module.ModuleManager;
 
-/**
- * @since 9.0.0 This query is replaced by {@link MetadataQueryV2}
- */
-@Deprecated
 public class MetadataQuery implements GraphQLQueryResolver {
 
     private final ModuleManager moduleManager;
@@ -55,52 +54,68 @@ public class MetadataQuery implements GraphQLQueryResolver {
         return metadataQueryService;
     }
 
-    public List<Service> getAllServices(final Duration duration,
-                                        final String group) throws IOException {
-        return getMetadataQueryService().listServices(null, group);
+    /**
+     * @return all 0 of metadata.
+     */
+    @Deprecated
+    public ClusterBrief getGlobalBrief(final Duration duration) throws IOException, ParseException {
+        return new ClusterBrief();
     }
 
-    public List<Service> getAllBrowserServices(final Duration duration) throws IOException {
-        return getMetadataQueryService().listServices(Layer.BROWSER.name(), null);
+    public List<Service> getAllServices(final Duration duration,
+                                        final String group) throws IOException, ParseException {
+        return getMetadataQueryService().getAllServices(group);
+    }
+
+    public List<Service> getAllBrowserServices(final Duration duration) throws IOException, ParseException {
+        return getMetadataQueryService().getAllBrowserServices();
     }
 
     public List<Service> searchServices(final Duration duration,
-                                        final String keyword) throws IOException {
-        List<Service> services = getMetadataQueryService().listServices(null, null);
-        return services.stream().filter(service -> service.getName().contains(keyword)).collect(Collectors.toList());
+                                        final String keyword) throws IOException, ParseException {
+        return getMetadataQueryService().searchServices(
+            duration.getStartTimestamp(), duration.getEndTimestamp(), keyword);
     }
 
     public Service searchService(final String serviceCode) throws IOException {
-        return getMetadataQueryService().getService(IDManager.ServiceID.buildId(serviceCode, true));
+        return getMetadataQueryService().searchService(serviceCode);
     }
 
     public List<Service> searchBrowserServices(final Duration duration,
-                                               final String keyword) throws IOException {
-        List<Service> services = getMetadataQueryService().listServices(Layer.BROWSER.name(), null);
-        return services.stream().filter(service -> service.getName().contains(keyword)).collect(Collectors.toList());
+                                               final String keyword) throws IOException, ParseException {
+        return getMetadataQueryService().searchBrowserServices(
+            duration.getStartTimestamp(), duration.getEndTimestamp(), keyword);
     }
 
     public Service searchBrowserService(final String serviceCode) throws IOException {
-        return getMetadataQueryService().getService(IDManager.ServiceID.buildId(serviceCode, true));
+        return getMetadataQueryService().searchBrowserService(serviceCode);
     }
 
     public List<ServiceInstance> getServiceInstances(final Duration duration,
-                                                     final String serviceId) throws IOException {
-        return getMetadataQueryService().listInstances(duration, serviceId);
+                                                     final String serviceId) throws IOException, ParseException {
+        return getMetadataQueryService().getServiceInstances(
+            duration.getStartTimestamp(), duration.getEndTimestamp(), serviceId);
     }
 
     public List<Endpoint> searchEndpoint(final String keyword, final String serviceId,
                                          final int limit) throws IOException {
-        return getMetadataQueryService().findEndpoint(keyword, serviceId, limit);
+        return getMetadataQueryService().searchEndpoint(keyword, serviceId, limit);
+    }
+
+    public EndpointInfo getEndpointInfo(final String endpointId) throws IOException {
+        return getMetadataQueryService().getEndpointInfo(endpointId);
     }
 
     public List<Database> getAllDatabases(final Duration duration) throws IOException {
-        final List<Service> serviceList = getMetadataQueryService().listServices(Layer.VIRTUAL_DATABASE.name(), null);
-        return serviceList.stream().map(service -> {
-            Database database = new Database();
-            database.setId(service.getId());
-            database.setName(service.getName());
-            return database;
-        }).distinct().collect(Collectors.toList());
+        return getMetadataQueryService().getAllDatabases();
+    }
+
+    public TimeInfo getTimeInfo() {
+        TimeInfo timeInfo = new TimeInfo();
+        SimpleDateFormat timezoneFormat = new SimpleDateFormat("ZZZZZZ");
+        Date date = new Date();
+        timeInfo.setCurrentTimestamp(date.getTime());
+        timeInfo.setTimezone(timezoneFormat.format(date));
+        return timeInfo;
     }
 }

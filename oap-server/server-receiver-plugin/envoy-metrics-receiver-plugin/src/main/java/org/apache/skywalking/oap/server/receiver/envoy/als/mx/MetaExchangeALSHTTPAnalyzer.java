@@ -23,13 +23,13 @@ import com.google.protobuf.TextFormat;
 import io.envoyproxy.envoy.data.accesslog.v3.AccessLogCommon;
 import io.envoyproxy.envoy.data.accesslog.v3.HTTPAccessLogEntry;
 import io.envoyproxy.envoy.service.accesslog.v3.StreamAccessLogsMessage;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.skywalking.apm.network.servicemesh.v3.HTTPServiceMeshMetric;
-import org.apache.skywalking.apm.network.servicemesh.v3.HTTPServiceMeshMetrics;
-import org.apache.skywalking.apm.network.servicemesh.v3.ServiceMeshMetrics;
+import org.apache.skywalking.apm.network.servicemesh.v3.ServiceMeshMetric;
 import org.apache.skywalking.oap.server.library.module.ModuleManager;
 import org.apache.skywalking.oap.server.library.module.ModuleStartException;
 import org.apache.skywalking.oap.server.receiver.envoy.EnvoyMetricReceiverConfig;
@@ -37,7 +37,8 @@ import org.apache.skywalking.oap.server.receiver.envoy.als.AbstractALSAnalyzer;
 import org.apache.skywalking.oap.server.receiver.envoy.als.Role;
 import org.apache.skywalking.oap.server.receiver.envoy.als.ServiceMetaInfo;
 
-import static org.apache.skywalking.oap.server.core.Const.TLS_MODE.NON_TLS;
+import static org.apache.skywalking.oap.server.library.util.CollectionUtils.isNotEmpty;
+import static org.apache.skywalking.oap.server.receiver.envoy.als.LogEntry2MetricsAdapter.NON_TLS;
 
 @Slf4j
 public class MetaExchangeALSHTTPAnalyzer extends AbstractALSAnalyzer {
@@ -72,7 +73,7 @@ public class MetaExchangeALSHTTPAnalyzer extends AbstractALSAnalyzer {
         final HTTPAccessLogEntry entry,
         final Role role
     ) {
-        if (previousResult.hasResult()) {
+        if (isNotEmpty(previousResult.getMetrics())) {
             return previousResult;
         }
         if (!entry.hasCommonProperties()) {
@@ -91,7 +92,7 @@ public class MetaExchangeALSHTTPAnalyzer extends AbstractALSAnalyzer {
             return Result.builder().service(currSvc).build();
         }
 
-        final HTTPServiceMeshMetrics.Builder httpMetrics = HTTPServiceMeshMetrics.newBuilder();
+        final List<ServiceMeshMetric.Builder> result = new ArrayList<>();
         final AtomicBoolean downstreamExists = new AtomicBoolean();
         stateMap.forEach((key, value) -> {
             if (!key.equals(UPSTREAM_KEY) && !key.equals(DOWNSTREAM_KEY)) {
@@ -104,33 +105,33 @@ public class MetaExchangeALSHTTPAnalyzer extends AbstractALSAnalyzer {
                 log.error("Fail to parse metadata {} to FlatNode", Base64.getEncoder().encode(value.toByteArray()));
                 return;
             }
-            final HTTPServiceMeshMetric.Builder metrics;
+            final ServiceMeshMetric.Builder metrics;
             switch (key) {
                 case UPSTREAM_KEY:
                     metrics = newAdapter(entry, currSvc, svc).adaptToUpstreamMetrics().setTlsMode(NON_TLS);
                     if (log.isDebugEnabled()) {
                         log.debug("Transformed a {} outbound mesh metrics {}", role, TextFormat.shortDebugString(metrics));
                     }
-                    httpMetrics.addMetrics(metrics);
+                    result.add(metrics);
                     break;
                 case DOWNSTREAM_KEY:
                     metrics = newAdapter(entry, svc, currSvc).adaptToDownstreamMetrics();
                     if (log.isDebugEnabled()) {
                         log.debug("Transformed a {} inbound mesh metrics {}", role, TextFormat.shortDebugString(metrics));
                     }
-                    httpMetrics.addMetrics(metrics);
+                    result.add(metrics);
                     downstreamExists.set(true);
                     break;
             }
         });
         if (role.equals(Role.PROXY) && !downstreamExists.get()) {
-            final HTTPServiceMeshMetric.Builder metric = newAdapter(entry, config.serviceMetaInfoFactory().unknown(), currSvc).adaptToDownstreamMetrics();
+            final ServiceMeshMetric.Builder metric = newAdapter(entry, config.serviceMetaInfoFactory().unknown(), currSvc).adaptToDownstreamMetrics();
             if (log.isDebugEnabled()) {
                 log.debug("Transformed a {} inbound mesh metric {}", role, TextFormat.shortDebugString(metric));
             }
-            httpMetrics.addMetrics(metric);
+            result.add(metric);
         }
-        return Result.builder().metrics(ServiceMeshMetrics.newBuilder().setHttpMetrics(httpMetrics)).service(currSvc).build();
+        return Result.builder().metrics(result).service(currSvc).build();
     }
 
     protected ServiceMetaInfo adaptToServiceMetaInfo(final Any value) throws Exception {

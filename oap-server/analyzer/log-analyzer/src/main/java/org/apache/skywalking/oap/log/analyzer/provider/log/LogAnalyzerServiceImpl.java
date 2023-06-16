@@ -24,15 +24,13 @@ import lombok.RequiredArgsConstructor;
 import org.apache.skywalking.apm.network.logging.v3.LogData;
 import org.apache.skywalking.oap.log.analyzer.provider.LogAnalyzerModuleConfig;
 import org.apache.skywalking.oap.log.analyzer.provider.log.listener.LogAnalysisListenerFactory;
-import org.apache.skywalking.oap.log.analyzer.provider.log.listener.LogSinkListenerFactory;
 import org.apache.skywalking.oap.server.library.module.ModuleManager;
 
 @RequiredArgsConstructor
-public class LogAnalyzerServiceImpl implements ILogAnalyzerService, ILogAnalysisListenerManager {
+public class LogAnalyzerServiceImpl implements ILogAnalyzerService, ILogAnalysisListenerFactoryManager {
     private final ModuleManager moduleManager;
     private final LogAnalyzerModuleConfig moduleConfig;
-    private final List<LogAnalysisListenerFactory> analysisListenerFactories = new ArrayList<>();
-    private final List<LogSinkListenerFactory> sinkListenerFactories = new ArrayList<>();
+    private final List<LogAnalysisListenerFactory> factories = new ArrayList<>();
 
     @Override
     public void doAnalysis(final LogData.Builder log, Message extraLog) {
@@ -42,21 +40,11 @@ public class LogAnalyzerServiceImpl implements ILogAnalyzerService, ILogAnalysis
 
     @Override
     public void addListenerFactory(final LogAnalysisListenerFactory factory) {
-        analysisListenerFactories.add(factory);
+        factories.add(factory);
     }
 
     @Override
     public List<LogAnalysisListenerFactory> getLogAnalysisListenerFactories() {
-        return analysisListenerFactories;
-    }
-
-    @Override
-    public void addSinkListenerFactory(LogSinkListenerFactory factory) {
-        sinkListenerFactories.add(factory);
-    }
-
-    @Override
-    public List<LogSinkListenerFactory> getSinkListenerFactory() {
-        return sinkListenerFactories;
+        return factories;
     }
 }

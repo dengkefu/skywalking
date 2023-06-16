@@ -21,21 +21,21 @@ package org.apache.skywalking.oap.server.storage.plugin.elasticsearch.query;
 import com.google.common.base.Strings;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
+import org.apache.skywalking.oap.server.library.util.StringUtil;
 import org.apache.skywalking.library.elasticsearch.requests.search.BoolQueryBuilder;
 import org.apache.skywalking.library.elasticsearch.requests.search.Query;
 import org.apache.skywalking.library.elasticsearch.requests.search.RangeQueryBuilder;
 import org.apache.skywalking.library.elasticsearch.requests.search.Search;
 import org.apache.skywalking.library.elasticsearch.requests.search.SearchBuilder;
 import org.apache.skywalking.library.elasticsearch.requests.search.Sort;
-import org.apache.skywalking.library.elasticsearch.requests.search.SearchParams;
 import org.apache.skywalking.library.elasticsearch.response.search.SearchHit;
 import org.apache.skywalking.library.elasticsearch.response.search.SearchResponse;
 import org.apache.skywalking.oap.server.core.analysis.IDManager;
 import org.apache.skywalking.oap.server.core.analysis.manual.searchtag.Tag;
 import org.apache.skywalking.oap.server.core.analysis.manual.segment.SegmentRecord;
-import org.apache.skywalking.oap.server.core.query.input.Duration;
 import org.apache.skywalking.oap.server.core.query.type.BasicTrace;
 import org.apache.skywalking.oap.server.core.query.type.QueryOrder;
 import org.apache.skywalking.oap.server.core.query.type.Span;
@@ -45,14 +45,9 @@ import org.apache.skywalking.oap.server.core.storage.query.ITraceQueryDAO;
 import org.apache.skywalking.oap.server.library.client.elasticsearch.ElasticSearchClient;
 import org.apache.skywalking.oap.server.library.util.BooleanUtils;
 import org.apache.skywalking.oap.server.library.util.CollectionUtils;
-import org.apache.skywalking.oap.server.library.util.StringUtil;
-import org.apache.skywalking.oap.server.storage.plugin.elasticsearch.base.ElasticSearchConverter;
 import org.apache.skywalking.oap.server.storage.plugin.elasticsearch.base.EsDAO;
 import org.apache.skywalking.oap.server.storage.plugin.elasticsearch.base.IndexController;
-import org.apache.skywalking.oap.server.storage.plugin.elasticsearch.base.RoutingUtils;
 import org.apache.skywalking.oap.server.storage.plugin.elasticsearch.base.TimeRangeIndexNameGenerator;
-
-import static java.util.Objects.nonNull;
 
 public class TraceQueryEsDAO extends EsDAO implements ITraceQueryDAO {
 
@@ -64,7 +59,8 @@ public class TraceQueryEsDAO extends EsDAO implements ITraceQueryDAO {
     }
 
     @Override
-    public TraceBrief queryBasicTraces(Duration duration,
+    public TraceBrief queryBasicTraces(long startSecondTB,
+                                       long endSecondTB,
                                        long minDuration,
                                        long maxDuration,
                                        String serviceId,
@@ -76,16 +72,7 @@ public class TraceQueryEsDAO extends EsDAO implements ITraceQueryDAO {
                                        TraceState traceState,
                                        QueryOrder queryOrder,
                                        final List<Tag> tags) throws IOException {
-        long startSecondTB = 0;
-        long endSecondTB = 0;
-        if (nonNull(duration)) {
-            startSecondTB = duration.getStartTimeBucketInSec();
-            endSecondTB = duration.getEndTimeBucketInSec();
-        }
         final BoolQueryBuilder query = Query.bool();
-        if (IndexController.LogicIndicesRegister.isMergedTable(SegmentRecord.INDEX_NAME)) {
-            query.must(Query.term(IndexController.LogicIndicesRegister.RECORD_TABLE_NAME, SegmentRecord.INDEX_NAME));
-        }
 
         if (startSecondTB != 0 && endSecondTB != 0) {
             query.must(Query.range(SegmentRecord.TIME_BUCKET).gte(startSecondTB).lte(endSecondTB));
@@ -146,6 +133,7 @@ public class TraceQueryEsDAO extends EsDAO implements ITraceQueryDAO {
                 endSecondTB
             ), search.build());
         final TraceBrief traceBrief = new TraceBrief();
+        traceBrief.setTotal(response.getHits().getTotal());
 
         for (SearchHit searchHit : response.getHits().getHits()) {
             BasicTrace basicTrace = new BasicTrace();
@@ -179,58 +167,28 @@ public class TraceQueryEsDAO extends EsDAO implements ITraceQueryDAO {
                   .query(Query.term(SegmentRecord.TRACE_ID, traceId))
                   .size(segmentQueryMaxSize);
 
-        SearchParams searchParams = new SearchParams();
-        RoutingUtils.addRoutingValueToSearchParam(searchParams, traceId);
+        final SearchResponse response = getClient().search(index, search.build());
 
-        final SearchResponse response = getClient().search(index, search.build(), searchParams);
-
-        return buildRecords(response);
-    }
-
-    @Override
-    public List<SegmentRecord> queryBySegmentIdList(List<String> segmentIdList) throws IOException {
-        final String index =
-            IndexController.LogicIndicesRegister.getPhysicalTableName(SegmentRecord.INDEX_NAME);
-
-        final SearchBuilder search =
-            Search.builder()
-                .query(Query.terms(SegmentRecord.SEGMENT_ID, segmentIdList))
-                .size(segmentQueryMaxSize);
-
-        SearchParams searchParams = new SearchParams();
-        final SearchResponse response = getClient().search(index, search.build(), searchParams);
-
-        return buildRecords(response);
-    }
-
-    @Override
-    public List<SegmentRecord> queryByTraceIdWithInstanceId(List<String> traceIdList, List<String> instanceIdList) throws IOException {
-        final String index =
-            IndexController.LogicIndicesRegister.getPhysicalTableName(SegmentRecord.INDEX_NAME);
-
-        final SearchBuilder search =
-            Search.builder()
-                .query(Query.bool().must(Query.terms(SegmentRecord.TRACE_ID, traceIdList)).must(Query.terms(SegmentRecord.SERVICE_INSTANCE_ID, instanceIdList)))
-                .size(segmentQueryMaxSize);
-
-        SearchParams searchParams = new SearchParams();
-        final SearchResponse response = getClient().search(index, search.build(), searchParams);
-
-        return buildRecords(response);
+        List<SegmentRecord> segmentRecords = new ArrayList<>();
+        for (SearchHit searchHit : response.getHits().getHits()) {
+            SegmentRecord segmentRecord = new SegmentRecord();
+            segmentRecord.setSegmentId((String) searchHit.getSource().get(SegmentRecord.SEGMENT_ID));
+            segmentRecord.setTraceId((String) searchHit.getSource().get(SegmentRecord.TRACE_ID));
+            segmentRecord.setServiceId((String) searchHit.getSource().get(SegmentRecord.SERVICE_ID));
+            segmentRecord.setStartTime(((Number) searchHit.getSource().get(SegmentRecord.START_TIME)).longValue());
+            segmentRecord.setLatency(((Number) searchHit.getSource().get(SegmentRecord.LATENCY)).intValue());
+            segmentRecord.setIsError(((Number) searchHit.getSource().get(SegmentRecord.IS_ERROR)).intValue());
+            String dataBinaryBase64 = (String) searchHit.getSource().get(SegmentRecord.DATA_BINARY);
+            if (!Strings.isNullOrEmpty(dataBinaryBase64)) {
+                segmentRecord.setDataBinary(Base64.getDecoder().decode(dataBinaryBase64));
+            }
+            segmentRecords.add(segmentRecord);
+        }
+        return segmentRecords;
     }
 
     @Override
     public List<Span> doFlexibleTraceQuery(String traceId) throws IOException {
         return Collections.emptyList();
-    }
-
-    private List<SegmentRecord> buildRecords(SearchResponse response) {
-        List<SegmentRecord> segmentRecords = new ArrayList<>();
-        for (SearchHit searchHit : response.getHits().getHits()) {
-            SegmentRecord segmentRecord = new SegmentRecord.Builder().storage2Entity(
-                new ElasticSearchConverter.ToEntity(SegmentRecord.INDEX_NAME, searchHit.getSource()));
-            segmentRecords.add(segmentRecord);
-        }
-        return segmentRecords;
     }
 }

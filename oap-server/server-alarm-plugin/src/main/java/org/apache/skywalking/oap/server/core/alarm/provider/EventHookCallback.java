@@ -26,7 +26,6 @@ import org.apache.skywalking.oap.server.analyzer.event.EventAnalyzerService;
 import org.apache.skywalking.oap.server.core.alarm.AlarmCallback;
 import org.apache.skywalking.oap.server.core.alarm.AlarmMessage;
 import org.apache.skywalking.oap.server.core.analysis.IDManager;
-import org.apache.skywalking.oap.server.core.analysis.Layer;
 import org.apache.skywalking.oap.server.core.source.DefaultScopeDefine;
 import org.apache.skywalking.oap.server.library.module.ModuleManager;
 
@@ -65,8 +64,7 @@ public class EventHookCallback implements AlarmCallback {
                 .setStartTime(now - (msg.getPeriod() * 60 * 1000))
                 .setMessage(msg.getAlarmMessage())
                 .setType(Type.Error)
-                .setEndTime(now)
-                .setLayer(Layer.GENERAL.name());
+                .setEndTime(now);
         switch (msg.getScopeId()) {
             case DefaultScopeDefine.SERVICE :
                 IDManager.ServiceID.ServiceIDDefinition serviceIdDef = IDManager.ServiceID.analysisId(msg.getId0());

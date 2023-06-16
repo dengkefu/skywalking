@@ -18,29 +18,25 @@
 
 package org.apache.skywalking.oap.server.core.analysis.metrics;
 
-import org.apache.skywalking.oap.server.core.analysis.metrics.annotation.Arg;
-import org.apache.skywalking.oap.server.core.analysis.metrics.annotation.Entrance;
-import org.apache.skywalking.oap.server.core.analysis.metrics.annotation.MetricsFunction;
-import org.apache.skywalking.oap.server.core.analysis.metrics.annotation.SourceFrom;
-import org.apache.skywalking.oap.server.core.storage.annotation.BanyanDB;
-import org.apache.skywalking.oap.server.core.storage.annotation.Column;
-import org.apache.skywalking.oap.server.core.storage.annotation.ElasticSearch;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.IntStream;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.skywalking.oap.server.core.analysis.metrics.annotation.Arg;
+import org.apache.skywalking.oap.server.core.analysis.metrics.annotation.Entrance;
+import org.apache.skywalking.oap.server.core.analysis.metrics.annotation.MetricsFunction;
+import org.apache.skywalking.oap.server.core.analysis.metrics.annotation.SourceFrom;
+import org.apache.skywalking.oap.server.core.storage.annotation.Column;
 
 /**
- * Percentile is a better implementation than deprecated PxxMetrics in older releases.
- * This could calculate the multiple P50/75/90/95/99 values once for all.
- *
- * @since 7.0.0
+ * Percentile is a better implementation than {@link PxxMetrics}. It is introduced since 7.0.0, it could calculate the
+ * multiple P50/75/90/95/99 values once for all.
  */
 @MetricsFunction(functionName = "percentile")
 public abstract class PercentileMetrics extends Metrics implements MultiIntValuesHolder {
     protected static final String DATASET = "dataset";
-    protected static final String VALUE = "datatable_value";
+    protected static final String VALUE = "value";
     protected static final String PRECISION = "precision";
 
     private static final int[] RANKS = {
@@ -53,19 +49,15 @@ public abstract class PercentileMetrics extends Metrics implements MultiIntValue
 
     @Getter
     @Setter
-    @Column(name = VALUE, dataType = Column.ValueDataType.LABELED_VALUE, storageOnly = true)
-    @ElasticSearch.Column(legacyName = "value")
-    @BanyanDB.MeasureField
+    @Column(columnName = VALUE, dataType = Column.ValueDataType.LABELED_VALUE, storageOnly = true)
     private DataTable percentileValues;
     @Getter
     @Setter
-    @Column(name = PRECISION, storageOnly = true)
-    @BanyanDB.MeasureField
+    @Column(columnName = PRECISION, storageOnly = true)
     private int precision;
     @Getter
     @Setter
-    @Column(name = DATASET, storageOnly = true)
-    @BanyanDB.MeasureField
+    @Column(columnName = DATASET, storageOnly = true)
     private DataTable dataset;
 
     private boolean isCalculated;

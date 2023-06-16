@@ -19,9 +19,8 @@
 package org.apache.skywalking.oap.server.core.analysis.metrics;
 
 import org.apache.skywalking.oap.server.core.remote.grpc.proto.RemoteData;
-import org.apache.skywalking.oap.server.core.storage.StorageID;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class PercentileMetricsTest {
     private int precision = 10; //ms
@@ -44,7 +43,7 @@ public class PercentileMetricsTest {
 
         metricsMocker.calculate();
 
-        Assertions.assertArrayEquals(new int[] {
+        Assert.assertArrayEquals(new int[] {
             70,
             90,
             90,
@@ -71,7 +70,7 @@ public class PercentileMetricsTest {
 
         metricsMocker.calculate();
 
-        Assertions.assertArrayEquals(new int[] {
+        Assert.assertArrayEquals(new int[] {
             90,
             90,
             90,
@@ -89,7 +88,7 @@ public class PercentileMetricsTest {
 
         metricsMocker.calculate();
 
-        Assertions.assertArrayEquals(new int[] {
+        Assert.assertArrayEquals(new int[] {
             90,
             110,
             110,
@@ -107,7 +106,7 @@ public class PercentileMetricsTest {
 
         metricsMocker.calculate();
 
-        Assertions.assertArrayEquals(new int[] {
+        Assert.assertArrayEquals(new int[] {
             0,
             0,
             0,
@@ -119,7 +118,7 @@ public class PercentileMetricsTest {
     public class PercentileMetricsMocker extends PercentileMetrics {
 
         @Override
-        protected StorageID id0() {
+        protected String id0() {
             return null;
         }
 

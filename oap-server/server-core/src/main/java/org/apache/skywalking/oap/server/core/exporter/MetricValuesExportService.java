@@ -21,9 +21,9 @@ package org.apache.skywalking.oap.server.core.exporter;
 import org.apache.skywalking.oap.server.library.module.Service;
 
 /**
- * Export the metrics value from metrics through this service
+ * Export the metrics value from metrics through this service, if provider exists.
  */
-public interface MetricValuesExportService extends Service, ExporterService<ExportEvent> {
+public interface MetricValuesExportService extends Service {
     /**
      * This method is sync-mode export, the performance effects the persistence result. Queue mode is highly
      * recommended.

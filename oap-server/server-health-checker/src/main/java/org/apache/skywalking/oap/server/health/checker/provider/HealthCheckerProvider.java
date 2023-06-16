@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.skywalking.oap.server.health.checker.module.HealthCheckerModule;
+import org.apache.skywalking.oap.server.library.module.ModuleConfig;
 import org.apache.skywalking.oap.server.library.module.ModuleDefine;
 import org.apache.skywalking.oap.server.library.module.ModuleProvider;
 import org.apache.skywalking.oap.server.library.module.ModuleServiceHolder;
@@ -44,7 +45,7 @@ import org.apache.skywalking.oap.server.telemetry.api.MetricsCreator;
 public class HealthCheckerProvider extends ModuleProvider {
     private final AtomicDouble score = new AtomicDouble();
     private final AtomicReference<String> details = new AtomicReference<>();
-    private HealthCheckerConfig config;
+    private final HealthCheckerConfig config = new HealthCheckerConfig();
     private MetricsCollector collector;
     private MetricsCreator metricsCreator;
     private ScheduledExecutorService ses;
@@ -57,19 +58,8 @@ public class HealthCheckerProvider extends ModuleProvider {
         return HealthCheckerModule.class;
     }
 
-    @Override
-    public ConfigCreator newConfigCreator() {
-        return new ConfigCreator<HealthCheckerConfig>() {
-            @Override
-            public Class type() {
-                return HealthCheckerConfig.class;
-            }
-
-            @Override
-            public void onInitialized(final HealthCheckerConfig initialized) {
-                config = initialized;
-            }
-        };
+    @Override public ModuleConfig createConfigBeanIfAbsent() {
+        return config;
     }
 
     @Override public void prepare() throws ServiceNotProvidedException, ModuleStartException {

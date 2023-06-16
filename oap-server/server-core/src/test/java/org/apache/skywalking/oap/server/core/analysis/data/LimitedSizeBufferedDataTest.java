@@ -18,12 +18,10 @@
 
 package org.apache.skywalking.oap.server.core.analysis.data;
 
-import org.apache.skywalking.oap.server.core.storage.ComparableStorageData;
-import org.apache.skywalking.oap.server.core.storage.StorageID;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-
 import java.util.Objects;
+import org.apache.skywalking.oap.server.core.storage.ComparableStorageData;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class LimitedSizeBufferedDataTest {
     @Test
@@ -47,7 +45,7 @@ public class LimitedSizeBufferedDataTest {
         };
         int i = 0;
         for (MockStorageData data : collection.read()) {
-            Assertions.assertEquals(expected[i++], data.latency);
+            Assert.assertEquals(expected[i++], data.latency);
         }
     }
 
@@ -65,8 +63,8 @@ public class LimitedSizeBufferedDataTest {
         }
 
         @Override
-        public StorageID id() {
-            return new StorageID().append("ID", "id");
+        public String id() {
+            return "id";
         }
 
         @Override

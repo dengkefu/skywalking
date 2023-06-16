@@ -22,21 +22,22 @@ import org.apache.skywalking.oap.server.library.datacarrier.SampleData;
 import org.apache.skywalking.oap.server.library.datacarrier.buffer.BufferStrategy;
 import org.apache.skywalking.oap.server.library.datacarrier.buffer.Channels;
 import org.apache.skywalking.oap.server.library.datacarrier.partition.SimpleRollingPartitioner;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import org.powermock.reflect.Whitebox;
+import org.junit.Assert;
+import org.junit.Test;
+import org.powermock.api.support.membermodification.MemberModifier;
 
 public class ConsumeDriverTest {
     @Test
-    public void testBeginConsumeDriver() {
+    public void testBeginConsumeDriver() throws IllegalAccessException {
         Channels<SampleData> channels = new Channels<SampleData>(2, 100, new SimpleRollingPartitioner<SampleData>(), BufferStrategy.BLOCKING);
         ConsumeDriver<SampleData> pool = new ConsumeDriver<SampleData>("default", channels, new SampleConsumer(), 2, 20);
         pool.begin(channels);
 
-        ConsumerThread[] threads = Whitebox.getInternalState(pool, "consumerThreads");
-        Assertions.assertEquals(2, threads.length);
-        Assertions.assertTrue(threads[0].isAlive());
-        Assertions.assertTrue(threads[1].isAlive());
+        ConsumerThread[] threads = (ConsumerThread[]) MemberModifier.field(ConsumeDriver.class, "consumerThreads")
+                                                                    .get(pool);
+        Assert.assertEquals(2, threads.length);
+        Assert.assertTrue(threads[0].isAlive());
+        Assert.assertTrue(threads[1].isAlive());
     }
 
     @Test
@@ -47,10 +48,11 @@ public class ConsumeDriverTest {
 
         Thread.sleep(5000);
         pool.close(channels);
-        ConsumerThread[] threads = Whitebox.getInternalState(pool, "consumerThreads");
+        ConsumerThread[] threads = (ConsumerThread[]) MemberModifier.field(ConsumeDriver.class, "consumerThreads")
+                                                                    .get(pool);
 
-        Assertions.assertEquals(2, threads.length);
-        Assertions.assertFalse((Boolean) Whitebox.getInternalState(threads[0], "running"));
-        Assertions.assertFalse((Boolean) Whitebox.getInternalState(threads[1], "running"));
+        Assert.assertEquals(2, threads.length);
+        Assert.assertFalse((Boolean) MemberModifier.field(ConsumerThread.class, "running").get(threads[0]));
+        Assert.assertFalse((Boolean) MemberModifier.field(ConsumerThread.class, "running").get(threads[1]));
     }
 }

@@ -23,7 +23,7 @@ import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.skywalking.oap.server.core.analysis.IDManager;
-import org.apache.skywalking.oap.server.core.analysis.Layer;
+import org.apache.skywalking.oap.server.core.analysis.NodeType;
 
 import static org.apache.skywalking.oap.server.core.source.DefaultScopeDefine.SERVICE_INSTANCE;
 import static org.apache.skywalking.oap.server.core.source.DefaultScopeDefine.SERVICE_INSTANCE_CATALOG_NAME;
@@ -57,9 +57,8 @@ public class ServiceInstance extends Source {
     @Setter
     @ScopeDefaultColumn.DefinedByField(columnName = "service_name", requireDynamicActive = true)
     private String serviceName;
-    @Getter
     @Setter
-    private Layer serviceLayer;
+    private NodeType nodeType;
     @Getter
     @Setter
     private String endpointName;
@@ -69,6 +68,10 @@ public class ServiceInstance extends Source {
     @Getter
     @Setter
     private boolean status;
+    @Getter
+    @Setter
+    @Deprecated
+    private int responseCode;
     @Getter
     @Setter
     private int httpResponseStatusCode;
@@ -87,9 +90,13 @@ public class ServiceInstance extends Source {
     @Setter
     private SideCar sideCar = new SideCar();
 
+    @Getter
+    @Setter
+    private TCPInfo tcpInfo = new TCPInfo();
+
     @Override
     public void prepare() {
-        serviceId = IDManager.ServiceID.buildId(serviceName, serviceLayer.isNormal());
+        serviceId = IDManager.ServiceID.buildId(serviceName, nodeType);
     }
 
     public String getTag(String key) {

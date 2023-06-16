@@ -21,22 +21,21 @@ package org.apache.skywalking.oap.server.cluster.plugin.nacos;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import org.apache.skywalking.oap.server.core.cluster.RemoteInstance;
 import org.apache.skywalking.oap.server.core.remote.client.Address;
 import org.apache.skywalking.oap.server.library.module.ModuleDefineHolder;
 import org.apache.skywalking.oap.server.telemetry.api.HealthCheckMetrics;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.powermock.reflect.Whitebox;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -54,7 +53,7 @@ public class NacosCoordinatorTest {
 
     private static final String SERVICE_NAME = "test-service";
 
-    @BeforeEach
+    @Before
     public void setUp() throws NacosException {
         doNothing().when(healthChecker).health();
         nacosConfig.setServiceName(SERVICE_NAME);
@@ -110,10 +109,10 @@ public class NacosCoordinatorTest {
         registerRemote(internalAddress);
     }
 
-    private void validate(Address originAddress, RemoteInstance instance) {
+    private void validate(Address originArress, RemoteInstance instance) {
         Address instanceAddress = instance.getAddress();
-        assertEquals(originAddress.getHost(), instanceAddress.getHost());
-        assertEquals(originAddress.getPort(), instanceAddress.getPort());
+        assertEquals(originArress.getHost(), instanceAddress.getHost());
+        assertEquals(originArress.getPort(), instanceAddress.getPort());
     }
 
     private void registerRemote(Address address) throws NacosException {

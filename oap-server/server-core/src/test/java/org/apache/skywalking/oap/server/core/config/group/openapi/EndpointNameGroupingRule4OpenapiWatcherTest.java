@@ -18,18 +18,18 @@
 
 package org.apache.skywalking.oap.server.core.config.group.openapi;
 
-import org.apache.skywalking.oap.server.configuration.api.ConfigChangeWatcher;
-import org.apache.skywalking.oap.server.core.CoreModule;
-import org.apache.skywalking.oap.server.core.config.group.EndpointNameGrouping;
-import org.apache.skywalking.oap.server.library.module.ModuleDefine;
-import org.apache.skywalking.oap.server.library.module.ModuleProvider;
-import org.apache.skywalking.oap.server.library.module.ServiceNotProvidedException;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-
 import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.skywalking.oap.server.configuration.api.ConfigChangeWatcher;
+import org.apache.skywalking.oap.server.core.CoreModule;
+import org.apache.skywalking.oap.server.core.config.group.EndpointNameGrouping;
+import org.apache.skywalking.oap.server.library.module.ModuleConfig;
+import org.apache.skywalking.oap.server.library.module.ModuleDefine;
+import org.apache.skywalking.oap.server.library.module.ModuleProvider;
+import org.apache.skywalking.oap.server.library.module.ServiceNotProvidedException;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class EndpointNameGroupingRule4OpenapiWatcherTest {
     @Test
@@ -49,7 +49,7 @@ public class EndpointNameGroupingRule4OpenapiWatcherTest {
                 }
 
                 @Override
-                public ConfigCreator newConfigCreator() {
+                public ModuleConfig createConfigBeanIfAbsent() {
                     return null;
                 }
 
@@ -73,7 +73,7 @@ public class EndpointNameGroupingRule4OpenapiWatcherTest {
                     return new String[0];
                 }
             }, endpointNameGrouping);
-        Assertions.assertEquals("GET:/products/{id}", endpointNameGrouping.format("serviceA", "GET:/products/123")._1());
+        Assert.assertEquals("GET:/products/{id}", endpointNameGrouping.format("serviceA", "GET:/products/123"));
 
         Map<String, ConfigChangeWatcher.ConfigChangeEvent> groupItems = new HashMap<>();
         groupItems.put(
@@ -250,12 +250,12 @@ public class EndpointNameGroupingRule4OpenapiWatcherTest {
         );
 
         watcher.notifyGroup(groupItems);
-        Assertions.assertEquals("GET:/products/{order-id}", endpointNameGrouping.format("serviceA", "GET:/products/123")._1());
+        Assert.assertEquals("GET:/products/{order-id}", endpointNameGrouping.format("serviceA", "GET:/products/123"));
 
         groupItems.put("serviceA.productAPI-v1", new ConfigChangeWatcher.ConfigChangeEvent("", ConfigChangeWatcher.EventType.DELETE));
         watcher.notifyGroup(groupItems);
 
-        Assertions.assertEquals("GET:/products/123", endpointNameGrouping.format("serviceA", "GET:/products/123")._1());
+        Assert.assertEquals("GET:/products/123", endpointNameGrouping.format("serviceA", "GET:/products/123"));
 
     }
 }

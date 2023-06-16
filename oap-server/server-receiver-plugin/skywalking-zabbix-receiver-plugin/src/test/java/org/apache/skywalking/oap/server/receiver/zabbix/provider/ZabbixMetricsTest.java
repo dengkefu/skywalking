@@ -36,15 +36,13 @@ import org.apache.skywalking.oap.server.core.config.group.EndpointNameGrouping;
 import org.apache.skywalking.oap.server.library.module.ModuleManager;
 import org.apache.skywalking.oap.server.receiver.zabbix.provider.config.ZabbixConfig;
 import org.apache.skywalking.oap.server.receiver.zabbix.provider.config.ZabbixConfigs;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.powermock.reflect.Whitebox;
 
 import java.util.ArrayList;
@@ -56,10 +54,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
-import static org.mockito.quality.Strictness.LENIENT;
 
-@ExtendWith(MockitoExtension.class)
-@MockitoSettings(strictness = LENIENT)
+@RunWith(MockitoJUnitRunner.Silent.class)
 public class ZabbixMetricsTest extends ZabbixBaseTest {
 
     protected CoreModuleProvider moduleProvider;
@@ -68,18 +64,13 @@ public class ZabbixMetricsTest extends ZabbixBaseTest {
 
     private List<AcceptableValue> values = new ArrayList<>();
 
-    @BeforeAll
+    @BeforeClass
     public static void setup() {
         MeterEntity.setNamingControl(
             new NamingControl(512, 512, 512, new EndpointNameGrouping()));
     }
 
-    @BeforeEach
-    public void beforeEach() throws Throwable {
-        setupMetrics();
-    }
-
-    @AfterAll
+    @AfterClass
     public static void tearDown() {
         MeterEntity.setNamingControl(null);
     }
@@ -141,16 +132,16 @@ public class ZabbixMetricsTest extends ZabbixBaseTest {
         assertZabbixAgentDataResponse(2);
 
         // Verify meter system received data
-        Assertions.assertEquals(1, values.size());
+        Assert.assertEquals(1, values.size());
         AvgLabeledFunction avgLabeledFunction = (AvgLabeledFunction) values.get(0);
         String serviceId = IDManager.ServiceID.buildId("zabbix::test-01-hostname", true);
-        Assertions.assertEquals(serviceId, avgLabeledFunction.getEntityId());
-        Assertions.assertEquals(serviceId, avgLabeledFunction.getServiceId());
-        Assertions.assertEquals(1, avgLabeledFunction.getSummation().get("avg1"), 0.0);
-        Assertions.assertEquals(2, avgLabeledFunction.getSummation().get("avg5"), 0.0);
-        Assertions.assertEquals(3, avgLabeledFunction.getSummation().get("avg15"), 0.0);
-        Assertions.assertEquals(1, avgLabeledFunction.getCount().get("avg1"), 0.0);
-        Assertions.assertEquals(1, avgLabeledFunction.getCount().get("avg5"), 0.0);
-        Assertions.assertEquals(1, avgLabeledFunction.getCount().get("avg15"), 0.0);
+        Assert.assertEquals(serviceId, avgLabeledFunction.getEntityId());
+        Assert.assertEquals(serviceId, avgLabeledFunction.getServiceId());
+        Assert.assertEquals(1, avgLabeledFunction.getSummation().get("avg1"), 0.0);
+        Assert.assertEquals(2, avgLabeledFunction.getSummation().get("avg5"), 0.0);
+        Assert.assertEquals(3, avgLabeledFunction.getSummation().get("avg15"), 0.0);
+        Assert.assertEquals(1, avgLabeledFunction.getCount().get("avg1"), 0.0);
+        Assert.assertEquals(1, avgLabeledFunction.getCount().get("avg5"), 0.0);
+        Assert.assertEquals(1, avgLabeledFunction.getCount().get("avg15"), 0.0);
     }
 }

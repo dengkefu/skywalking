@@ -18,6 +18,7 @@
 
 package org.apache.skywalking.oap.server.core.remote.client;
 
+import java.util.concurrent.TimeUnit;
 import org.apache.skywalking.oap.server.core.remote.data.StreamData;
 import org.apache.skywalking.oap.server.core.remote.grpc.proto.RemoteData;
 import org.apache.skywalking.oap.server.core.worker.AbstractWorker;
@@ -27,9 +28,7 @@ import org.apache.skywalking.oap.server.telemetry.api.CounterMetrics;
 import org.apache.skywalking.oap.server.telemetry.api.MetricsCreator;
 import org.apache.skywalking.oap.server.testing.module.ModuleDefineTesting;
 import org.apache.skywalking.oap.server.testing.module.ModuleManagerTesting;
-import org.junit.jupiter.api.Assertions;
-
-import java.util.concurrent.TimeUnit;
+import org.junit.Assert;
 
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
@@ -99,7 +98,7 @@ public class GRPCRemoteClientRealClient {
         @Override
         public void in(Object o) {
             TestStreamData streamData = (TestStreamData) o;
-            Assertions.assertEquals(987, streamData.value);
+            Assert.assertEquals(987, streamData.value);
         }
     }
 }

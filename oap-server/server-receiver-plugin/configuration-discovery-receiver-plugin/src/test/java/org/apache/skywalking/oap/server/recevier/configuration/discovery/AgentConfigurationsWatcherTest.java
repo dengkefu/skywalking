@@ -18,27 +18,26 @@
 
 package org.apache.skywalking.oap.server.recevier.configuration.discovery;
 
+import java.io.IOException;
+import java.io.Reader;
+import java.util.Map;
 import org.apache.skywalking.oap.server.configuration.api.ConfigChangeWatcher;
 import org.apache.skywalking.oap.server.library.util.ResourceUtils;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.powermock.reflect.Whitebox;
 
-import java.io.IOException;
-import java.io.Reader;
-import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.spy;
 
 public class AgentConfigurationsWatcherTest {
     @Spy
     private AgentConfigurationsWatcher agentConfigurationsWatcher = new AgentConfigurationsWatcher(null);
 
-    @BeforeEach
+    @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
     }
@@ -61,25 +60,25 @@ public class AgentConfigurationsWatcherTest {
         AgentConfigurationsTable modifyAgentConfigurationsTable = Whitebox.getInternalState(
             agentConfigurationsWatcher, "agentConfigurationsTable");
         Map<String, AgentConfigurations> configurationCache = modifyAgentConfigurationsTable.getAgentConfigurationsCache();
-        Assertions.assertEquals(2, configurationCache.size());
+        Assert.assertEquals(2, configurationCache.size());
         AgentConfigurations agentConfigurations0 = configurationCache.get("serviceA");
-        Assertions.assertEquals("serviceA", agentConfigurations0.getService());
-        Assertions.assertEquals(2, agentConfigurations0.getConfiguration().size());
-        Assertions.assertEquals("1000", agentConfigurations0.getConfiguration().get("trace.sample_rate"));
-        Assertions.assertEquals(
+        Assert.assertEquals("serviceA", agentConfigurations0.getService());
+        Assert.assertEquals(2, agentConfigurations0.getConfiguration().size());
+        Assert.assertEquals("1000", agentConfigurations0.getConfiguration().get("trace.sample_rate"));
+        Assert.assertEquals(
             "/api/seller/seller/*", agentConfigurations0.getConfiguration().get("trace.ignore_path"));
-        Assertions.assertEquals(
+        Assert.assertEquals(
             "92670f1ccbdee60e14ffc054d70a5cf3f93f6b5fb1adb83b10bea4fec79b96e7bc5e7b188e231428853721ded42ec756663947316065617f3cfdf51d6dfc8da6",
             agentConfigurations0.getUuid()
         );
 
         AgentConfigurations agentConfigurations1 = configurationCache.get("serviceB");
-        Assertions.assertEquals("serviceB", agentConfigurations1.getService());
-        Assertions.assertEquals(2, agentConfigurations1.getConfiguration().size());
-        Assertions.assertEquals("1000", agentConfigurations1.getConfiguration().get("trace.sample_rate"));
-        Assertions.assertEquals(
+        Assert.assertEquals("serviceB", agentConfigurations1.getService());
+        Assert.assertEquals(2, agentConfigurations1.getConfiguration().size());
+        Assert.assertEquals("1000", agentConfigurations1.getConfiguration().get("trace.sample_rate"));
+        Assert.assertEquals(
             "/api/seller/seller/*", agentConfigurations1.getConfiguration().get("trace.ignore_path"));
-        Assertions.assertEquals(
+        Assert.assertEquals(
             "92670f1ccbdee60e14ffc054d70a5cf3f93f6b5fb1adb83b10bea4fec79b96e7bc5e7b188e231428853721ded42ec756663947316065617f3cfdf51d6dfc8da6",
             agentConfigurations0.getUuid()
         );
@@ -102,11 +101,11 @@ public class AgentConfigurationsWatcherTest {
             agentConfigurationsWatcher, "agentConfigurationsTable");
         Map<String, AgentConfigurations> configurationCache = agentConfigurationsTable.getAgentConfigurationsCache();
 
-        Assertions.assertEquals(0, configurationCache.size());
+        Assert.assertEquals(0, configurationCache.size());
         AgentConfigurations agentConfigurations0 = configurationCache.get("serviceA");
         AgentConfigurations agentConfigurations1 = configurationCache.get("serviceB");
 
-        Assertions.assertNull(agentConfigurations0);
-        Assertions.assertNull(agentConfigurations1);
+        Assert.assertNull(null, agentConfigurations0);
+        Assert.assertNull(null, agentConfigurations1);
     }
 }

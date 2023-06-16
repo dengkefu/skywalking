@@ -54,6 +54,7 @@ public class TopNStreamProcessor implements StreamProcessor<TopN> {
     @Getter
     private List<TopNWorker> persistentWorkers = new ArrayList<>();
     private Map<Class<? extends Record>, TopNWorker> workers = new HashMap<>();
+    @Setter
     @Getter
     private int topNWorkerReportCycle = 10;
     @Setter
@@ -64,13 +65,8 @@ public class TopNStreamProcessor implements StreamProcessor<TopN> {
         return PROCESSOR;
     }
 
-    public void setTopNWorkerReportCycle(final int topNWorkerReportCycle) {
-        if (topNWorkerReportCycle < 1) {
-            return;
-        }
-        this.topNWorkerReportCycle = topNWorkerReportCycle;
-    }
-
+    @Override
+    @SuppressWarnings("unchecked")
     public void create(ModuleDefineHolder moduleDefineHolder,
                        Stream stream,
                        Class<? extends TopN> topNClass) throws StorageException {
@@ -83,8 +79,7 @@ public class TopNStreamProcessor implements StreamProcessor<TopN> {
         IRecordDAO recordDAO;
         try {
             recordDAO = storageDAO.newRecordDao(builder.getDeclaredConstructor().newInstance());
-        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException |
-                 InvocationTargetException e) {
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
             throw new UnexpectedException(
                 "Create " + stream.builder().getSimpleName() + " top n record DAO failure.", e);
         }
@@ -92,7 +87,7 @@ public class TopNStreamProcessor implements StreamProcessor<TopN> {
         ModelCreator modelSetter = moduleDefineHolder.find(CoreModule.NAME).provider().getService(ModelCreator.class);
         // Top N metrics doesn't read data from database during the persistent process. Keep the timeRelativeID == false always.
         Model model = modelSetter.add(
-            topNClass, stream.scopeId(), new Storage(stream.name(), false, DownSampling.Second));
+            topNClass, stream.scopeId(), new Storage(stream.name(), false, DownSampling.Second), true);
 
         TopNWorker persistentWorker = new TopNWorker(
             moduleDefineHolder, model, topSize, topNWorkerReportCycle * 60 * 1000L, recordDAO);

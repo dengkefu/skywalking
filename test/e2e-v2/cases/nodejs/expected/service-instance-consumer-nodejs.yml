@@ -22,11 +22,11 @@
   {{- contains .attributes }}
   - name: OS Name
     value: linux
-  - name: "Process No."
+  - name: ""
     value: "1"
   - name: ipv4s
     value: ""
   {{- end}}
-  language: NODEJS
+  language: UNKNOWN
   instanceuuid: {{ b64enc "consumer" }}.1_{{ b64enc "consumer-instance" }}
 {{- end}}

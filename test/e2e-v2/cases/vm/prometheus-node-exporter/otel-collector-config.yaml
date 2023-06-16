@@ -17,29 +17,25 @@ receivers:
   prometheus:
     config:
       scrape_configs:
-        - job_name: "vm-monitoring" # make sure to use this in the vm.yaml to filter only VM metrics
+        - job_name: 'vm-monitoring' # make sure to use this in the vm.yaml to filter only VM metrics
           scrape_interval: 10s
           static_configs:
-            - targets: ["vm-service:9100"]
+            - targets: [ 'vm-service:9100' ]
 
 processors:
   batch:
 
 exporters:
-  otlp:
+  opencensus:
     endpoint: "oap:11800" # The OAP Server address
-    # The config format of OTEL version prior to 0.34.0, eg. 0.29.0, should be:
-    # insecure: true
-    tls:
-      insecure: true
-    #insecure: true
-  # Exports data to the console
+    insecure: true
+  # Exports data to the console  
   logging:
-    loglevel: debug
+    logLevel: debug
 
 service:
   pipelines:
     metrics:
       receivers: [prometheus]
       processors: [batch]
-      exporters: [otlp, logging]
+      exporters: [opencensus,logging]

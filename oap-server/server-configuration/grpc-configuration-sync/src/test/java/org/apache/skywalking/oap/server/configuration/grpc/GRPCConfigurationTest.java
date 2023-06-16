@@ -18,31 +18,22 @@
 
 package org.apache.skywalking.oap.server.configuration.grpc;
 
-import io.grpc.ManagedChannel;
-import io.grpc.Server;
-import io.grpc.inprocess.InProcessChannelBuilder;
-import io.grpc.inprocess.InProcessServerBuilder;
-import io.grpc.util.MutableHandlerRegistry;
+import io.grpc.testing.GrpcServerRule;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.skywalking.oap.server.configuration.api.ConfigChangeWatcher;
 import org.apache.skywalking.oap.server.configuration.api.GroupConfigChangeWatcher;
 import org.apache.skywalking.oap.server.configuration.service.ConfigurationServiceGrpc;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 import org.powermock.reflect.Whitebox;
-
-import java.io.IOException;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 @Slf4j
 public class GRPCConfigurationTest {
@@ -51,60 +42,29 @@ public class GRPCConfigurationTest {
     private ConfigChangeWatcher singleWatcher;
     private GroupConfigChangeWatcher groupWatcher;
 
-    private Server server;
-    private ManagedChannel channel;
-    private MutableHandlerRegistry serviceRegistry;
+    @Rule
+    public final GrpcServerRule grpcServerRule = new GrpcServerRule().directExecutor();
 
-    @BeforeEach
-    public void before() throws IOException {
-        serviceRegistry = new MutableHandlerRegistry();
-        final String name = UUID.randomUUID().toString();
-        InProcessServerBuilder serverBuilder =
-                InProcessServerBuilder
-                        .forName(name)
-                        .fallbackHandlerRegistry(serviceRegistry);
-
-        server = serverBuilder.build();
-        server.start();
-
-        channel = InProcessChannelBuilder.forName(name).build();
-
+    @Before
+    public void before() {
+        //for create register
         RemoteEndpointSettings settings = new RemoteEndpointSettings();
         settings.setHost("localhost");
         settings.setPort(5678);
         settings.setPeriod(1);
         provider = new GRPCConfigurationProvider();
         register = new GRPCConfigWatcherRegister(settings);
-        ConfigurationServiceGrpc.ConfigurationServiceBlockingStub blockingStub = ConfigurationServiceGrpc.newBlockingStub(channel);
+        ConfigurationServiceGrpc.ConfigurationServiceBlockingStub blockingStub = ConfigurationServiceGrpc.newBlockingStub(
+            grpcServerRule.getChannel());
         Whitebox.setInternalState(register, "stub", blockingStub);
         initWatcher();
         assertNotNull(provider);
     }
 
-    @AfterEach
-    public void after() {
-        channel.shutdown();
-        server.shutdown();
-
-        try {
-            channel.awaitTermination(1L, TimeUnit.MINUTES);
-            server.awaitTermination(1L, TimeUnit.MINUTES);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
-        } finally {
-            channel.shutdownNow();
-            channel = null;
-            server.shutdownNow();
-            server = null;
-        }
-    }
-
-    @Test
-    @Timeout(20)
+    @Test(timeout = 20000)
     public void shouldReadUpdated() throws Exception {
         AtomicInteger dataFlag = new AtomicInteger(0);
-        serviceRegistry.addService(new MockGRPCConfigService(dataFlag));
+        grpcServerRule.getServiceRegistry().addService(new MockGRPCConfigService(dataFlag));
         assertNull(singleWatcher.value());
         register.registerConfigChangeWatcher(singleWatcher);
         register.start();
@@ -132,11 +92,10 @@ public class GRPCConfigurationTest {
         assertEquals("", singleWatcher.value());
     }
 
-    @Test
-    @Timeout(20)
+    @Test(timeout = 20000)
     public void shouldReadUpdated4Group() throws Exception {
         AtomicInteger dataFlag = new AtomicInteger(0);
-        serviceRegistry.addService(new MockGRPCConfigService(dataFlag));
+        grpcServerRule.getServiceRegistry().addService(new MockGRPCConfigService(dataFlag));
         assertEquals("{}", groupWatcher.groupItems().toString());
         register.registerConfigChangeWatcher(groupWatcher);
         register.start();

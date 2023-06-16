@@ -17,16 +17,15 @@
 
 package org.apache.skywalking.oap.server.core.analysis.metrics;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 public class DataTableTestCase {
 
     private DataTable dataTable;
 
-    @BeforeEach
+    @Before
     public void init() {
         dataTable = new DataTable();
         dataTable.valueAccumulation("5", 500L);
@@ -38,7 +37,7 @@ public class DataTableTestCase {
 
     @Test
     public void toStorageData() {
-        assertEquals("1,100|2,200|5,500|6,600|7,700", dataTable.toStorageData());
+        Assert.assertEquals("1,100|2,200|5,500|6,600|7,700", dataTable.toStorageData());
     }
 
     @Test
@@ -46,11 +45,11 @@ public class DataTableTestCase {
         DataTable dataTable = new DataTable();
         dataTable.toObject("1,100|2,200|5,500|6,600|7,700");
 
-        assertEquals(100, dataTable.get("1").intValue());
-        assertEquals(200, dataTable.get("2").intValue());
-        assertEquals(500, dataTable.get("5").intValue());
-        assertEquals(600, dataTable.get("6").intValue());
-        assertEquals(700, dataTable.get("7").intValue());
+        Assert.assertEquals(100, dataTable.get("1").intValue());
+        Assert.assertEquals(200, dataTable.get("2").intValue());
+        Assert.assertEquals(500, dataTable.get("5").intValue());
+        Assert.assertEquals(600, dataTable.get("6").intValue());
+        Assert.assertEquals(700, dataTable.get("7").intValue());
     }
 
     @Test
@@ -58,6 +57,6 @@ public class DataTableTestCase {
         DataTable dataTable = new DataTable();
         dataTable.append(this.dataTable);
 
-        assertEquals("1,100|2,200|5,500|6,600|7,700", dataTable.toStorageData());
+        Assert.assertEquals("1,100|2,200|5,500|6,600|7,700", dataTable.toStorageData());
     }
 }

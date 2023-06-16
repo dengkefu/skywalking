@@ -29,8 +29,9 @@ import org.apache.skywalking.apm.network.language.agent.v3.MemoryPool;
 import org.apache.skywalking.apm.network.language.agent.v3.Thread;
 import org.apache.skywalking.oap.server.core.CoreModule;
 import org.apache.skywalking.oap.server.core.analysis.IDManager;
+import org.apache.skywalking.oap.server.core.analysis.NodeType;
 import org.apache.skywalking.oap.server.core.analysis.TimeBucket;
-import org.apache.skywalking.oap.server.core.source.GCPhase;
+import org.apache.skywalking.oap.server.core.source.GCPhrase;
 import org.apache.skywalking.oap.server.core.source.MemoryPoolType;
 import org.apache.skywalking.oap.server.core.source.ServiceInstanceJVMCPU;
 import org.apache.skywalking.oap.server.core.source.ServiceInstanceJVMClass;
@@ -52,7 +53,7 @@ public class JVMSourceDispatcher {
     public void sendMetric(String service, String serviceInstance, JVMMetric metrics) {
         long minuteTimeBucket = TimeBucket.getMinuteTimeBucket(metrics.getTime());
 
-        final String serviceId = IDManager.ServiceID.buildId(service, true);
+        final String serviceId = IDManager.ServiceID.buildId(service, NodeType.Normal);
         final String serviceInstanceId = IDManager.ServiceInstanceID.buildId(serviceId, serviceInstance);
 
         this.sendToCpuMetricProcess(
@@ -100,15 +101,12 @@ public class JVMSourceDispatcher {
             serviceInstanceJVMGC.setServiceId(serviceId);
             serviceInstanceJVMGC.setServiceName(service);
 
-            switch (gc.getPhase()) {
+            switch (gc.getPhrase()) {
                 case NEW:
-                    serviceInstanceJVMGC.setPhase(GCPhase.NEW);
+                    serviceInstanceJVMGC.setPhrase(GCPhrase.NEW);
                     break;
                 case OLD:
-                    serviceInstanceJVMGC.setPhase(GCPhase.OLD);
-                    break;
-                case NORMAL:
-                    serviceInstanceJVMGC.setPhase(GCPhase.NORMAL);
+                    serviceInstanceJVMGC.setPhrase(GCPhrase.OLD);
                     break;
             }
 

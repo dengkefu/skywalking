@@ -34,10 +34,8 @@ public class SourceColumn {
     private int length;
     private String fieldSetter;
     private String fieldGetter;
-    private final boolean groupByCondInTopN;
 
-    public SourceColumn(String fieldName, String columnName, Class<?> type, boolean isID, int length,
-                        boolean groupByCondInTopN) {
+    public SourceColumn(String fieldName, String columnName, Class<?> type, boolean isID, int length) {
         this.fieldName = fieldName;
         this.columnName = columnName;
         this.type = type;
@@ -47,7 +45,6 @@ public class SourceColumn {
 
         this.fieldGetter = ClassMethodUtil.toGetMethod(fieldName);
         this.fieldSetter = ClassMethodUtil.toSetMethod(fieldName);
-        this.groupByCondInTopN = groupByCondInTopN;
     }
 
     public void setFieldName(String fieldName) {

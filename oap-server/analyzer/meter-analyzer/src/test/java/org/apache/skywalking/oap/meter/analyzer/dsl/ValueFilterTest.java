@@ -19,19 +19,38 @@
 package org.apache.skywalking.oap.meter.analyzer.dsl;
 
 import com.google.common.collect.ImmutableMap;
-import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
-
 import java.util.Arrays;
 import java.util.Collection;
+import lombok.extern.slf4j.Slf4j;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import static com.google.common.collect.ImmutableMap.of;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.fail;
 
 @Slf4j
+@RunWith(Parameterized.class)
 public class ValueFilterTest {
+
+    @Parameterized.Parameter
+    public String name;
+
+    @Parameterized.Parameter(1)
+    public ImmutableMap<String, SampleFamily> input;
+
+    @Parameterized.Parameter(2)
+    public String expression;
+
+    @Parameterized.Parameter(3)
+    public Result want;
+
+    @Parameterized.Parameter(4)
+    public boolean isThrow;
+
+    @Parameterized.Parameters(name = "{index}: {0}")
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][] {
             {
@@ -121,13 +140,8 @@ public class ValueFilterTest {
             });
     }
 
-    @ParameterizedTest(name = "{0}")
-    @MethodSource("data")
-    public void test(final String name,
-                     final ImmutableMap<String, SampleFamily> input,
-                     final String expression,
-                     final Result want,
-                     final boolean isThrow) {
+    @Test
+    public void test() {
         Expression e = DSL.parse(expression);
         Result r = null;
         try {
@@ -142,6 +156,6 @@ public class ValueFilterTest {
         if (isThrow) {
             fail("Should throw something");
         }
-        assertThat(r).isEqualTo(want);
+        assertThat(r, is(want));
     }
 }

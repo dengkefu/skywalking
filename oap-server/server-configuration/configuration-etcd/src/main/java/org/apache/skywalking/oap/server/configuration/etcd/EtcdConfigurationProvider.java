@@ -18,14 +18,19 @@
 package org.apache.skywalking.oap.server.configuration.etcd;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.skywalking.oap.server.library.util.StringUtil;
 import org.apache.skywalking.oap.server.configuration.api.AbstractConfigurationProvider;
 import org.apache.skywalking.oap.server.configuration.api.ConfigWatcherRegister;
+import org.apache.skywalking.oap.server.library.module.ModuleConfig;
 import org.apache.skywalking.oap.server.library.module.ModuleStartException;
-import org.apache.skywalking.oap.server.library.util.StringUtil;
 
 @Slf4j
 public class EtcdConfigurationProvider extends AbstractConfigurationProvider {
-    private EtcdServerSettings settings;
+    private final EtcdServerSettings settings;
+
+    public EtcdConfigurationProvider() {
+        this.settings = new EtcdServerSettings();
+    }
 
     @Override
     protected ConfigWatcherRegister initConfigReader() throws ModuleStartException {
@@ -46,17 +51,7 @@ public class EtcdConfigurationProvider extends AbstractConfigurationProvider {
     }
 
     @Override
-    public ConfigCreator newConfigCreator() {
-        return new ConfigCreator<EtcdServerSettings>() {
-            @Override
-            public Class type() {
-                return EtcdServerSettings.class;
-            }
-
-            @Override
-            public void onInitialized(final EtcdServerSettings initialized) {
-                settings = initialized;
-            }
-        };
+    public ModuleConfig createConfigBeanIfAbsent() {
+        return settings;
     }
 }

@@ -23,6 +23,6 @@
   - name: ipv4s
     value: ""
   {{- end}}
-  language: PYTHON
+  language: UNKNOWN
   instanceuuid: {{ b64enc "consumer-py" }}.1_{{ b64enc "consumer-py-instance" }}
 {{- end}}

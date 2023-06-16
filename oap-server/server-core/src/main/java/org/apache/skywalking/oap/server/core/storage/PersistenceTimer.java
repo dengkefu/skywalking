@@ -136,9 +136,7 @@ public enum PersistenceTimer {
                             .whenComplete(($1, $2) -> executeLatencyTimer.close());
                 }, prepareExecutorService);
             }).toArray(CompletableFuture[]::new));
-
         future.whenComplete((unused, throwable) -> {
-            batchDAO.endOfFlush();
             allTimer.close();
             if (log.isDebugEnabled()) {
                 log.debug(

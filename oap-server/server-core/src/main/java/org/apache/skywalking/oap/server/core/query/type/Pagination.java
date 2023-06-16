@@ -30,4 +30,5 @@ import lombok.Setter;
 public class Pagination {
     private int pageNum;
     private int pageSize;
+    private boolean needTotal;
 }
